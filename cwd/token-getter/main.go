@@ -7,9 +7,10 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/exec"
+	"runtime"
 	"strings"
 
-	"golang.design/x/clipboard"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/youtube/v3"
@@ -88,10 +89,29 @@ func main() {
 	fmt.Println("Authorization complete!")
 }
 
+func copyToClipboard(token string) bool {
+	var cmd *exec.Cmd
+	switch runtime.GOOS {
+	case "windows":
+		cmd = exec.Command("clip")
+	case "darwin":
+		cmd = exec.Command("pbcopy")
+	default: // linux
+		if _, err := exec.LookPath("xclip"); err == nil {
+			cmd = exec.Command("xclip", "-selection", "clipboard")
+		} else if _, err := exec.LookPath("wl-clipboard"); err == nil {
+			cmd = exec.Command("wl-copy")
+		} else {
+			return false
+		}
+	}
+	cmd.Stdin = strings.NewReader(token)
+	return cmd.Run() == nil
+}
+
 func saveToken(token string, done chan struct{}) {
 	// Copy to clipboard
-	if err := clipboard.Init(); err == nil {
-		clipboard.Write(clipboard.FmtText, []byte(token))
+	if copyToClipboard(token) {
 		fmt.Println("Copied to clipboard!")
 	} else {
 		fmt.Println("Could not copy to clipboard")

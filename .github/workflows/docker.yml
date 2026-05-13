@@ -41,9 +41,12 @@ jobs:
         with:
           go-version: '1.25'
 
+      - name: Install X11 dependencies
+        run: sudo apt-get install -y libx11-dev
+
       - name: Build token-getter binaries
         run: |
-          cd cwd/token-getter
+          cd token-getter
           GOOS=windows GOARCH=amd64 go build -o ../dist/token-getter-windows-amd64.exe .
           GOOS=linux   GOARCH=amd64 go build -o ../dist/token-getter-linux-amd64 .
           GOOS=linux   GOARCH=arm64 go build -o ../dist/token-getter-linux-arm64 .
