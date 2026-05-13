@@ -3,6 +3,7 @@ package router
 import (
 	"net/http"
 
+	"github.com/ChezyName/YouTube-MCP/mcp"
 	"github.com/ChezyName/YouTube-MCP/youtube"
 	"github.com/gorilla/mux"
 )
@@ -20,6 +21,7 @@ func CreateRouter() *mux.Router {
 	router.HandleFunc("/channel", youtube.GetChannel).Methods("GET")                    // gets the channel stats - the public data
 	router.HandleFunc("/channel/analytics", youtube.GetChannelAnalytics).Methods("GET") // gets the channel stats - the public data
 
+	router.HandleFunc("/mcp", mcp.HandleMCP).Methods("POST") //handle the MCP server
 	return router
 }
 
