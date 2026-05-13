@@ -15,6 +15,7 @@ func CreateRouter() *mux.Router {
 	router.HandleFunc("/videos", youtube.ListVideos).Methods("GET")                          // get all videos from Channel Handle in env
 	router.HandleFunc("/videos/{id}", youtube.GetVideo).Methods("GET")                       // get the specific video data such as title, desc, view count (from PUBLIC data)
 	router.HandleFunc("/videos/{id}/analytics", youtube.GetAnalyticsForVideo).Methods("GET") // gets the specific video data from youtube analytics - needs OAUTH
+	router.HandleFunc("/videos/{id}/comments", youtube.GetVideoComments).Methods("GET")      // gets the specific video's comments, defaults to top 20
 
 	router.HandleFunc("/channel", youtube.GetChannel).Methods("GET")                    // gets the channel stats - the public data
 	router.HandleFunc("/channel/analytics", youtube.GetChannelAnalytics).Methods("GET") // gets the channel stats - the public data

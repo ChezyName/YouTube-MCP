@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"context"
 
@@ -144,4 +145,61 @@ func GetVideo(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(video)
+}
+
+func GetVideoComments(w http.ResponseWriter, r *http.Request) {
+	ctx := context.Background()
+	vars := mux.Vars(r)
+	videoID := vars["id"]
+
+	// Parse limit, default 20, max 100
+	limit := 20
+	if l := r.URL.Query().Get("limit"); l != "" {
+		if parsed, err := strconv.Atoi(l); err == nil {
+			limit = parsed
+			if limit > 100 {
+				limit = 100
+			}
+			if limit < 1 {
+				limit = 1
+			}
+		}
+	}
+
+	svc, err := youtube.NewService(ctx, option.WithAPIKey(config.GetConfig().YouTubeAPI))
+	if err != nil {
+		http.Error(w, "Failed to create YouTube client", http.StatusInternalServerError)
+		return
+	}
+
+	res, err := svc.CommentThreads.List([]string{"snippet"}).
+		VideoId(videoID).
+		Order("relevance"). // top comments
+		MaxResults(int64(limit)).
+		Do()
+	if err != nil {
+		http.Error(w, "Failed to fetch comments: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	var comments []Comment
+	for _, item := range res.Items {
+		c := item.Snippet.TopLevelComment.Snippet
+		comments = append(comments, Comment{
+			ID:          item.Id,
+			Author:      c.AuthorDisplayName,
+			Text:        c.TextDisplay,
+			LikeCount:   c.LikeCount,
+			PublishedAt: c.PublishedAt,
+			UpdatedAt:   c.UpdatedAt,
+		})
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(CommentsResponse{
+		VideoID:  videoID,
+		Total:    len(comments),
+		Limit:    limit,
+		Comments: comments,
+	})
 }

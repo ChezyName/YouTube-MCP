@@ -103,3 +103,19 @@ type ChannelAnalyticsResponse struct {
 	Gender           []RowData       `json:"gender"`
 	DailyBreakdown   []RowData       `json:"daily_breakdown"`
 }
+
+type Comment struct {
+	ID          string `json:"id"`
+	Author      string `json:"author"`
+	Text        string `json:"text"`
+	LikeCount   int64  `json:"like_count"`
+	PublishedAt string `json:"published_at"`
+	UpdatedAt   string `json:"updated_at"`
+}
+
+type CommentsResponse struct {
+	VideoID  string    `json:"video_id"`
+	Total    int       `json:"total"`
+	Limit    int       `json:"limit"`
+	Comments []Comment `json:"comments"`
+}
