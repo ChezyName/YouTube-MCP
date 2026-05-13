@@ -46,12 +46,11 @@ jobs:
 
       - name: Build token-getter binaries
         run: |
-          cd cwd/token-getter
-          GOOS=windows GOARCH=amd64 go build -o ../dist/token-getter-windows-amd64.exe .
-          GOOS=linux   GOARCH=amd64 go build -o ../dist/token-getter-linux-amd64 .
-          GOOS=linux   GOARCH=arm64 go build -o ../dist/token-getter-linux-arm64 .
-          GOOS=darwin  GOARCH=amd64 go build -o ../dist/token-getter-darwin-amd64 .
-          GOOS=darwin  GOARCH=arm64 go build -o ../dist/token-getter-darwin-arm64 .
+          GOOS=windows GOARCH=amd64 go build -o dist/token-getter-windows-amd64.exe ./cwd/token-getter
+          GOOS=linux   GOARCH=amd64 go build -o dist/token-getter-linux-amd64 ./cwd/token-getter
+          GOOS=linux   GOARCH=arm64 go build -o dist/token-getter-linux-arm64 ./cwd/token-getter
+          GOOS=darwin  GOARCH=amd64 go build -o dist/token-getter-darwin-amd64 ./cwd/token-getter
+          GOOS=darwin  GOARCH=arm64 go build -o dist/token-getter-darwin-arm64 ./cwd/token-getter
 
       - name: Upload binaries to release
         uses: softprops/action-gh-release@v2
