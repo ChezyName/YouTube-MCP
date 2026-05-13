@@ -32,6 +32,11 @@ func fetchDislikes(videoID string) (*VideoDislike, error) {
 func ListVideos(w http.ResponseWriter, r *http.Request) {
 	ctx := context.Background()
 
+	if config.GetConfig().ChannelHandle == "" {
+		http.Error(w, `Empty Channel Handle, Update .env with ChannelHandle="YOUR_CHANNEL_HANDLE"`, http.StatusInternalServerError)
+		return
+	}
+
 	svc, err := youtube.NewService(ctx, option.WithAPIKey(config.GetConfig().YouTubeAPI))
 	if err != nil {
 		http.Error(w, "Failed to create YouTube client", http.StatusInternalServerError)

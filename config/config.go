@@ -8,8 +8,9 @@ import (
 )
 
 type Config struct {
-	YouTubeAPI    string //for youtube analytics
-	ChannelHandle string
+	YouTubeAPI          string //for youtube analytics
+	YouTubeRefreshToken string //for youtube analytics
+	ChannelHandle       string
 }
 
 var cfg *Config
@@ -22,8 +23,9 @@ func LoadConfig() {
 	}
 
 	cfg = &Config{
-		YouTubeAPI:    os.Getenv("YouTubeAPI"),
-		ChannelHandle: os.Getenv("ChannelHandle"),
+		YouTubeAPI:          os.Getenv("YouTubeAPI"),
+		ChannelHandle:       os.Getenv("ChannelHandle"),
+		YouTubeRefreshToken: os.Getenv("YOUTUBE_REFRESH_TOKEN"),
 	}
 }
 

@@ -9,9 +9,12 @@ import (
 
 func CreateRouter() *mux.Router {
 	router := mux.NewRouter()
-	router.HandleFunc("/health", health) //check to
-	router.HandleFunc("/videos", youtube.ListVideos)
-	router.HandleFunc("/videos/{id}", youtube.GetVideo)
+	router.HandleFunc("/health", health).Methods("GET") //Health checker
+
+	//Routes for Videos
+	router.HandleFunc("/videos", youtube.ListVideos).Methods("GET")                          // get all videos from Channel Handle in env
+	router.HandleFunc("/videos/{id}", youtube.GetVideo).Methods("GET")                       // get the specific video data such as title, desc, view count (from PUBLIC data)
+	router.HandleFunc("/videos/{id}/analytics", youtube.GetAnalyticsForVideo).Methods("GET") // gets the specific video data from youtube analytics - needs OAUTH
 
 	return router
 }
