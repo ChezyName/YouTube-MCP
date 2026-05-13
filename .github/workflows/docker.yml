@@ -8,29 +8,7 @@ on:
     types: [published]
 
 jobs:
-  docker:
-    runs-on: ubuntu-latest
-    permissions:
-      packages: write
-      contents: read
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build and push
-        uses: docker/build-push-action@v5
-        with:
-          push: true
-          tags: |
-            ghcr.io/chezyname/youtube-mcp:latest
-            ghcr.io/chezyname/youtube-mcp:${{ github.ref_name }}
-  token-getter:
+  mcp-builder:
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -44,13 +22,13 @@ jobs:
       - name: Install X11 dependencies
         run: sudo apt-get install -y libx11-dev
 
-      - name: Build token-getter binaries
+      - name: Build youtube-mcp binaries
         run: |
-          GOOS=windows GOARCH=amd64 go build -o dist/token-getter-windows-amd64.exe ./cwd/token-getter
-          GOOS=linux   GOARCH=amd64 go build -o dist/token-getter-linux-amd64 ./cwd/token-getter
-          GOOS=linux   GOARCH=arm64 go build -o dist/token-getter-linux-arm64 ./cwd/token-getter
-          GOOS=darwin  GOARCH=amd64 go build -o dist/token-getter-darwin-amd64 ./cwd/token-getter
-          GOOS=darwin  GOARCH=arm64 go build -o dist/token-getter-darwin-arm64 ./cwd/token-getter
+          GOOS=windows GOARCH=amd64 go build -o dist/youtube-mcp-windows-amd64.exe main.go
+          GOOS=linux   GOARCH=amd64 go build -o dist/youtube-mcp-linux-amd64 main.go
+          GOOS=linux   GOARCH=arm64 go build -o dist/youtube-mcp-linux-arm64 main.go
+          GOOS=darwin  GOARCH=amd64 go build -o dist/youtube-mcp-darwin-amd64 main.go
+          GOOS=darwin  GOARCH=arm64 go build -o dist/youtube-mcp-darwin-arm64 main.go
 
       - name: Upload binaries to release
         uses: softprops/action-gh-release@v2

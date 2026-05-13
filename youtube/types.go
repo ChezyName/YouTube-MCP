@@ -11,11 +11,11 @@ type VideoDislike struct {
 }
 
 type Video struct {
-	ID          string `json:"id"`
-	Title       string `json:"title"`
-	Description string `json:"description"`
-	PublishedAt string `json:"published_at"`
-	Thumbnail   string `json:"thumbnail"`
+	ID          string `json:"id" jsonschema:"The unique ID of the video"`
+	Title       string `json:"title" jsonschema:"The title of the video"`
+	Description string `json:"description" jsonschema:"The description of the video"`
+	PublishedAt string `json:"published_at" jsonschema:"The time in which the vieo was published"`
+	Thumbnail   string `json:"thumbnail" jsonschema:"The thumbnail url of the video"`
 }
 
 type VideoDetail struct {

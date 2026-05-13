@@ -4,12 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strconv"
 
 	"context"
 
 	"github.com/ChezyName/YouTube-MCP/config"
-	"github.com/gorilla/mux"
 	"google.golang.org/api/option"
 	"google.golang.org/api/youtube/v3"
 )
@@ -30,25 +28,25 @@ func fetchDislikes(videoID string) (*VideoDislike, error) {
 	return &d, nil
 }
 
-func ListVideos(w http.ResponseWriter, r *http.Request) {
+func ListVideos() ([]Video, error) {
 	ctx := context.Background()
 
 	if config.GetConfig().ChannelHandle == "" {
-		http.Error(w, `Empty Channel Handle, Update .env with ChannelHandle="YOUR_CHANNEL_HANDLE"`, http.StatusInternalServerError)
-		return
+		//log.Error(`Empty Channel Handle, Update .env with ChannelHandle="YOUR_CHANNEL_HANDLE"`)
+		return []Video{}, fmt.Errorf("Missing Channel Handle")
 	}
 
 	svc, err := youtube.NewService(ctx, option.WithAPIKey(config.GetConfig().YouTubeAPI))
 	if err != nil {
-		http.Error(w, "Failed to create YouTube client", http.StatusInternalServerError)
-		return
+		//log.Error("Failed to create YouTube client")
+		return []Video{}, err
 	}
 
 	//Gets User (owner of the API key)'s Channel
 	channelRes, err := svc.Channels.List([]string{"contentDetails"}).ForHandle(config.GetConfig().ChannelHandle).Do()
 	if err != nil {
-		http.Error(w, "Failed to fetch channel: "+err.Error(), http.StatusInternalServerError)
-		return
+		//log.Error("Failed to fetch channel: " + err.Error())
+		return []Video{}, err
 	}
 
 	uploadsPlaylistID := channelRes.Items[0].ContentDetails.RelatedPlaylists.Uploads
@@ -64,8 +62,8 @@ func ListVideos(w http.ResponseWriter, r *http.Request) {
 
 		res, err := call.Do()
 		if err != nil {
-			http.Error(w, "Failed to fetch videos: "+err.Error(), http.StatusInternalServerError)
-			return
+			//log.Error("Failed to fetch videos: " + err.Error())
+			return []Video{}, err
 		}
 
 		for _, item := range res.Items {
@@ -84,39 +82,32 @@ func ListVideos(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(videos)
+	return videos, nil
 }
 
-func GetVideo(w http.ResponseWriter, r *http.Request) {
+func GetVideo(videoID string) (VideoDetail, error) {
 	ctx := context.Background()
-	vars := mux.Vars(r)
-	videoID := vars["id"]
 
 	if videoID == "" {
-		fmt.Println("Missing Video ID for GetVideo")
-		http.Error(w, "Missing video ID", http.StatusBadRequest)
-		return
+		//log.Error("Missing video ID", http.StatusBadRequest)
+		return VideoDetail{}, fmt.Errorf("Missing Video ID")
 	}
 
 	svc, err := youtube.NewService(ctx, option.WithAPIKey(config.GetConfig().YouTubeAPI))
 	if err != nil {
-		fmt.Println("Failed to create YouTube API Client")
-		http.Error(w, "Failed to create YouTube client", http.StatusInternalServerError)
-		return
+		//log.Error("Failed to create YouTube client")
+		return VideoDetail{}, err
 	}
 
 	res, err := svc.Videos.List([]string{"snippet", "statistics", "contentDetails"}).Id(videoID).Do()
 	if err != nil {
-		fmt.Println("Failed to fetch video: " + err.Error())
-		http.Error(w, "Failed to fetch video: "+err.Error(), http.StatusInternalServerError)
-		return
+		//log.Error("Failed to fetch video: " + err.Error())
+		return VideoDetail{}, err
 	}
 
 	if len(res.Items) == 0 {
-		fmt.Println("Video was not found")
-		http.Error(w, "Video not found", http.StatusNotFound)
-		return
+		//log.Error("Video not found", http.StatusNotFound)
+		return VideoDetail{}, err
 	}
 
 	item := res.Items[0]
@@ -143,33 +134,16 @@ func GetVideo(w http.ResponseWriter, r *http.Request) {
 		CommentCount: item.Statistics.CommentCount,
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(video)
+	return video, nil
 }
 
-func GetVideoComments(w http.ResponseWriter, r *http.Request) {
+func GetVideoComments(videoID string, limit int) (CommentsResponse, error) {
 	ctx := context.Background()
-	vars := mux.Vars(r)
-	videoID := vars["id"]
-
-	// Parse limit, default 20, max 100
-	limit := 20
-	if l := r.URL.Query().Get("limit"); l != "" {
-		if parsed, err := strconv.Atoi(l); err == nil {
-			limit = parsed
-			if limit > 100 {
-				limit = 100
-			}
-			if limit < 1 {
-				limit = 1
-			}
-		}
-	}
 
 	svc, err := youtube.NewService(ctx, option.WithAPIKey(config.GetConfig().YouTubeAPI))
 	if err != nil {
-		http.Error(w, "Failed to create YouTube client", http.StatusInternalServerError)
-		return
+		//log.Error("Failed to create YouTube client")
+		return CommentsResponse{}, err
 	}
 
 	res, err := svc.CommentThreads.List([]string{"snippet"}).
@@ -178,8 +152,8 @@ func GetVideoComments(w http.ResponseWriter, r *http.Request) {
 		MaxResults(int64(limit)).
 		Do()
 	if err != nil {
-		http.Error(w, "Failed to fetch comments: "+err.Error(), http.StatusInternalServerError)
-		return
+		//log.Error("Failed to fetch comments: " + err.Error())
+		return CommentsResponse{}, err
 	}
 
 	var comments []Comment
@@ -195,11 +169,12 @@ func GetVideoComments(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(CommentsResponse{
+	outComment := CommentsResponse{
 		VideoID:  videoID,
 		Total:    len(comments),
 		Limit:    limit,
 		Comments: comments,
-	})
+	}
+
+	return outComment, nil
 }

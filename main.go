@@ -1,13 +1,12 @@
 package main
 
 import (
-	"fmt"
+	"context"
 	"log"
-	"net/http"
-	"time"
 
 	"github.com/ChezyName/YouTube-MCP/config"
-	"github.com/ChezyName/YouTube-MCP/router"
+	youtubemcp "github.com/ChezyName/YouTube-MCP/mcp"
+	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
 func init() {
@@ -16,16 +15,12 @@ func init() {
 }
 
 func main() {
-	router := router.CreateRouter()
+	// Create a server with a single tool.
+	server := mcp.NewServer(&mcp.Implementation{Name: "YouTube MCP", Version: "v1.0.0"}, nil)
+	youtubemcp.AddTools(server)
 
-	server := &http.Server{
-		Handler: router,
-		Addr:    "0.0.0.0:8000",
-
-		WriteTimeout: 15 * time.Second,
-		ReadTimeout:  15 * time.Second,
+	// Run the server over stdin/stdout, until the client disconnects.
+	if err := server.Run(context.Background(), &mcp.StdioTransport{}); err != nil {
+		log.Fatal(err)
 	}
-
-	fmt.Println("Starting Server")
-	log.Fatal(server.ListenAndServe())
 }

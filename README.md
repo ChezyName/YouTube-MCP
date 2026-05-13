@@ -9,14 +9,6 @@ Needs the following APIs from Google
 * Needs OAuth for Private Data + User as TestUser
 
 TODO:
-> Logger
-> All Routes
-> > videos/{id}/analytics
-> > videos/last/{count}
-> > videos/last/{count}/analytics
-> > videos/top/{count}
-> > videos/top/{count}/analytics
-> channel/
-> > channel/analytics
+> Logger (custom)
 
-MCP stuff using the Anthropic / Linux Foundation Standards
+MCP local with Claude Desktop -> Needs Go Application as Single App to Download (Store Config Somewhere?)
