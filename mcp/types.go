@@ -7,6 +7,11 @@ type VideoList struct {
 	Videos []youtube.Video `json:"videos" jsonschema:"The videos"`
 }
 
-type GetVideoParams struct {
-	ID string `json:"id" jsonschema:"description=YouTube video ID,required"`
+type VideoParams struct {
+	ID string `json:"id" jsonschema:"YouTube video ID"`
+}
+
+type VideoCommentsParams struct {
+	ID    string `json:"id" jsonschema:"YouTube video ID"`
+	Limit *int   `json:"limit,omitempty" jsonschema:"The max number of comments loaded. default=20"`
 }

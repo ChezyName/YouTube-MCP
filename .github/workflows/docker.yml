@@ -1,4 +1,4 @@
-name: Publish Docker Image
+name: Builds all Binaries
 
 on:
   push:
@@ -8,7 +8,7 @@ on:
     types: [published]
 
 jobs:
-  mcp-builder:
+  binary-builder:
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -29,6 +29,14 @@ jobs:
           GOOS=linux   GOARCH=arm64 go build -o dist/youtube-mcp-linux-arm64 main.go
           GOOS=darwin  GOARCH=amd64 go build -o dist/youtube-mcp-darwin-amd64 main.go
           GOOS=darwin  GOARCH=arm64 go build -o dist/youtube-mcp-darwin-arm64 main.go
+      
+      - name: Build token-grabber binaries
+        run: |
+          GOOS=windows GOARCH=amd64 go build -o dist/token-grabber-windows-amd64.exe ./cwd/token-getter
+          GOOS=linux   GOARCH=amd64 go build -o dist/token-grabber-linux-amd64 ./cwd/token-getter
+          GOOS=linux   GOARCH=arm64 go build -o dist/token-grabber-linux-arm64 ./cwd/token-getter
+          GOOS=darwin  GOARCH=amd64 go build -o dist/token-grabber-darwin-amd64 ./cwd/token-getter
+          GOOS=darwin  GOARCH=arm64 go build -o dist/token-grabber-darwin-arm64 ./cwd/token-getter
 
       - name: Upload binaries to release
         uses: softprops/action-gh-release@v2

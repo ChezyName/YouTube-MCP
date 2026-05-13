@@ -19,16 +19,16 @@ type Video struct {
 }
 
 type VideoDetail struct {
-	ID           string `json:"id"`
-	Title        string `json:"title"`
-	Description  string `json:"description"`
-	PublishedAt  string `json:"published_at"`
-	Thumbnail    string `json:"thumbnail"`
-	Duration     string `json:"duration"`
-	ViewCount    uint64 `json:"view_count"`
-	DislikeCount uint64 `json:"disview_count"`
-	LikeCount    uint64 `json:"like_count"`
-	CommentCount uint64 `json:"comment_count"`
+	ID           string `json:"id" jsonschema:"The unique ID of the video"`
+	Title        string `json:"title" jsonschema:"The title of the video"`
+	Description  string `json:"description" jsonschema:"The description of the video"`
+	PublishedAt  string `json:"published_at" jsonschema:"The time in which the vieo was published"`
+	Thumbnail    string `json:"thumbnail" jsonschema:"The thumbnail url of the video"`
+	Duration     string `json:"duration" jsonschema:"The duration of the video"`
+	ViewCount    uint64 `json:"view_count" jsonschema:"The number of video views over the video's lifetime"`
+	DislikeCount uint64 `json:"disview_count" jsonschema:"The number of dislikes over the video's lifetime (using return YouTube Dislikes)"`
+	LikeCount    uint64 `json:"like_count" jsonschema:"The number of likes over the video's lifetime"`
+	CommentCount uint64 `json:"comment_count" jsonschema:"The number of comments over the video's lifetime"`
 }
 type DateRange struct {
 	Start string `json:"start"`
@@ -105,17 +105,17 @@ type ChannelAnalyticsResponse struct {
 }
 
 type Comment struct {
-	ID          string `json:"id"`
-	Author      string `json:"author"`
-	Text        string `json:"text"`
-	LikeCount   int64  `json:"like_count"`
-	PublishedAt string `json:"published_at"`
-	UpdatedAt   string `json:"updated_at"`
+	ID          string `json:"id" jsonschema:"The ID of the comment"`
+	Author      string `json:"author" jsonschema:"The author of the comment"`
+	Text        string `json:"text" jsonschema:"The text of the comment"`
+	LikeCount   int64  `json:"like_count" jsonschema:"The number of likes of the comment"`
+	PublishedAt string `json:"published_at" jsonschema:"When the comment was published"`
+	UpdatedAt   string `json:"updated_at" jsonschema:"When the comment was updated"`
 }
 
 type CommentsResponse struct {
-	VideoID  string    `json:"video_id"`
-	Total    int       `json:"total"`
-	Limit    int       `json:"limit"`
-	Comments []Comment `json:"comments"`
+	VideoID  string    `json:"video_id" jsonschema:"The associated video"`
+	Total    int       `json:"total" jsonschema:"The total number of comments retrieved"`
+	Limit    int       `json:"limit" jsonschema:"The given limit"`
+	Comments []Comment `json:"comments" jsonschema:"The comments in the video"`
 }
