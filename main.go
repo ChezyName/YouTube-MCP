@@ -12,7 +12,7 @@ import (
 
 func init() {
 	config.LoadConfig()
-	config.EnsureRefreshToken()
+	//config.EnsureRefreshToken() - only allowed for clients
 }
 
 func main() {
