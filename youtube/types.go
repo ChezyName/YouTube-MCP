@@ -75,3 +75,31 @@ type AnalyticsResponse struct {
 	DeviceTypes    []RowData `json:"device_types"`
 	DailyBreakdown []RowData `json:"daily_breakdown"`
 }
+
+type ChannelStats struct {
+	ID              string `json:"id"`
+	Title           string `json:"title"`
+	Description     string `json:"description"`
+	CustomURL       string `json:"custom_url"`
+	PublishedAt     string `json:"published_at"`
+	Thumbnail       string `json:"thumbnail"`
+	Banner          string `json:"banner"`
+	SubscriberCount uint64 `json:"subscriber_count"`
+	VideoCount      uint64 `json:"video_count"`
+	TotalViewCount  uint64 `json:"total_view_count"`
+	Country         string `json:"country"`
+}
+
+type ChannelAnalyticsResponse struct {
+	DateRange        DateRange       `json:"date_range"`
+	Overview         OverviewStats   `json:"overview"`
+	Impressions      ImpressionStats `json:"impressions"`
+	SubscriberGrowth []RowData       `json:"subscriber_growth"`
+	TopVideos        []RowData       `json:"top_videos"`
+	TrafficSources   []RowData       `json:"traffic_sources"`
+	Geography        []RowData       `json:"geography"`
+	DeviceTypes      []RowData       `json:"device_types"`
+	AgeGroups        []RowData       `json:"age_groups"`
+	Gender           []RowData       `json:"gender"`
+	DailyBreakdown   []RowData       `json:"daily_breakdown"`
+}

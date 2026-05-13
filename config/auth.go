@@ -86,3 +86,12 @@ func saveRefreshToken(token string) {
 		fmt.Printf("\nCould not write to .env — add this manually:\nYOUTUBE_REFRESH_TOKEN=%s\n", token)
 	}
 }
+
+func GetOAuthClient() (*http.Client, error) {
+	cfg := GetOAuthConfig()
+	token := &oauth2.Token{
+		RefreshToken: GetConfig().YouTubeRefreshToken,
+	}
+	tokenSource := cfg.TokenSource(context.Background(), token)
+	return oauth2.NewClient(context.Background(), tokenSource), nil
+}

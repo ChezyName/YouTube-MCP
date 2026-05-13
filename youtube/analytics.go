@@ -10,19 +10,9 @@ import (
 
 	"github.com/ChezyName/YouTube-MCP/config"
 	"github.com/gorilla/mux"
-	"golang.org/x/oauth2"
 	"google.golang.org/api/option"
 	youtubeAnalytics "google.golang.org/api/youtubeanalytics/v2"
 )
-
-func getOAuthClient() (*http.Client, error) {
-	cfg := config.GetOAuthConfig()
-	token := &oauth2.Token{
-		RefreshToken: config.GetConfig().YouTubeRefreshToken,
-	}
-	tokenSource := cfg.TokenSource(context.Background(), token)
-	return oauth2.NewClient(context.Background(), tokenSource), nil
-}
 
 func fetchMetrics(svc *youtubeAnalytics.Service, videoID, startDate, endDate, metrics, dimensions string) (*youtubeAnalytics.QueryResponse, error) {
 	call := svc.Reports.Query().
@@ -68,6 +58,7 @@ func toRows(res *youtubeAnalytics.QueryResponse) []RowData {
 }
 
 /*
+(defaults to 90days)
 Params:
 
 	start: start date for range, needs end date (defaults to -90days)
@@ -104,7 +95,7 @@ func GetAnalyticsForVideo(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	client, err := getOAuthClient()
+	client, err := config.GetOAuthClient()
 	if err != nil {
 		http.Error(w, "OAuth client error: "+err.Error(), http.StatusInternalServerError)
 		return
