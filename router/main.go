@@ -9,8 +9,9 @@ import (
 
 func CreateRouter() *mux.Router {
 	router := mux.NewRouter()
-	router.HandleFunc("/health", health)
+	router.HandleFunc("/health", health) //check to
 	router.HandleFunc("/videos", youtube.ListVideos)
+	router.HandleFunc("/videos/{id}", youtube.GetVideo)
 
 	return router
 }
