@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"time"
@@ -11,6 +12,7 @@ import (
 
 func init() {
 	config.LoadConfig()
+	config.EnsureRefreshToken()
 }
 
 func main() {
@@ -24,5 +26,6 @@ func main() {
 		ReadTimeout:  15 * time.Second,
 	}
 
+	fmt.Println("Starting Server")
 	log.Fatal(server.ListenAndServe())
 }
