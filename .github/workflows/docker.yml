@@ -8,7 +8,7 @@ on:
     types: [published]
 
 jobs:
-  build:
+  docker:
     runs-on: ubuntu-latest
     permissions:
       packages: write
@@ -30,3 +30,27 @@ jobs:
           tags: |
             ghcr.io/chezyname/youtube-mcp:latest
             ghcr.io/chezyname/youtube-mcp:${{ github.ref_name }}
+  token-getter:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.25'
+
+      - name: Build token-getter binaries
+        run: |
+          cd token-getter
+          GOOS=windows GOARCH=amd64 go build -o ../dist/token-getter-windows-amd64.exe .
+          GOOS=linux   GOARCH=amd64 go build -o ../dist/token-getter-linux-amd64 .
+          GOOS=linux   GOARCH=arm64 go build -o ../dist/token-getter-linux-arm64 .
+          GOOS=darwin  GOARCH=amd64 go build -o ../dist/token-getter-darwin-amd64 .
+          GOOS=darwin  GOARCH=arm64 go build -o ../dist/token-getter-darwin-arm64 .
+
+      - name: Upload binaries to release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
