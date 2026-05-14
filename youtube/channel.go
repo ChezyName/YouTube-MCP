@@ -2,10 +2,11 @@ package youtube
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"net/http"
+	"os"
+	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/ChezyName/YouTube-MCP/config"
@@ -14,25 +15,22 @@ import (
 	youtubeAnalytics "google.golang.org/api/youtubeanalytics/v2"
 )
 
-func GetChannel(w http.ResponseWriter, r *http.Request) {
+func GetChannel() (ChannelStats, error) {
 	ctx := context.Background()
 	svc, err := youtube.NewService(ctx, option.WithAPIKey(config.GetConfig().YouTubeAPI))
 	if err != nil {
-		http.Error(w, "Failed to create YouTube client", http.StatusInternalServerError)
-		return
+		return ChannelStats{}, err
 	}
 
 	res, err := svc.Channels.List([]string{"snippet", "statistics", "brandingSettings"}).
 		ForHandle(config.GetConfig().ChannelHandle).
 		Do()
 	if err != nil {
-		http.Error(w, "Failed to fetch channel: "+err.Error(), http.StatusInternalServerError)
-		return
+		return ChannelStats{}, err
 	}
 
 	if len(res.Items) == 0 {
-		http.Error(w, "Channel not found", http.StatusNotFound)
-		return
+		return ChannelStats{}, err
 	}
 
 	item := res.Items[0]
@@ -56,8 +54,7 @@ func GetChannel(w http.ResponseWriter, r *http.Request) {
 		Country:         item.Snippet.Country,
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(channel)
+	return channel, nil
 }
 
 /*
@@ -68,13 +65,8 @@ Params:
 	end: end date for range
 	range: custom numbers, in days or Lifetime - this superseeds all
 */
-func GetChannelAnalytics(w http.ResponseWriter, r *http.Request) {
-	//given URL...?start=XYZ&end=XYZ
-	endDate := r.URL.Query().Get("end")
-	startDate := r.URL.Query().Get("start")
-	inRange := r.URL.Query().Get("range")
-
-	//defaults to lifetiem
+func GetChannelAnalytics(startDate string, endDate string, inRange string) (ChannelAnalyticsResponse, error) {
+	//defaults to lifetime
 	if startDate == "" && endDate == "" && inRange == "" {
 		endDate = time.Now().Format("2006-01-02")
 		startDate = "2005-01-01"
@@ -89,28 +81,25 @@ func GetChannelAnalytics(w http.ResponseWriter, r *http.Request) {
 
 		if inRange != "" {
 			if strings.ToUpper(inRange) == "LIFETIME" {
-				endDate = time.Now().Format("2006-01-02")
 				startDate = "2005-01-01"
 			} else {
-				//try and parse # of days
-				days := 90 // default
-				fmt.Sscanf(inRange, "%d", &days)
-				startDate = time.Now().AddDate(0, 0, -days).Format("2006-01-02")
-				endDate = time.Now().Format("2006-01-02")
+				// Safe integer parsing
+				if d, err := strconv.Atoi(inRange); err == nil {
+					startDate = time.Now().AddDate(0, 0, -d).Format("2006-01-02")
+				}
 			}
+			endDate = time.Now().Format("2006-01-02")
 		}
 	}
 
 	client, err := config.GetOAuthClient()
 	if err != nil {
-		http.Error(w, "OAuth client error: "+err.Error(), http.StatusInternalServerError)
-		return
+		return ChannelAnalyticsResponse{}, err
 	}
 
 	svc, err := youtubeAnalytics.NewService(context.Background(), option.WithHTTPClient(client))
 	if err != nil {
-		http.Error(w, "Failed to create Analytics client: "+err.Error(), http.StatusInternalServerError)
-		return
+		return ChannelAnalyticsResponse{}, err
 	}
 
 	analytics := ChannelAnalyticsResponse{
@@ -126,7 +115,12 @@ func GetChannelAnalytics(w http.ResponseWriter, r *http.Request) {
 		if dimensions != "" {
 			call = call.Dimensions(dimensions)
 		}
-		return call.Do()
+		res, err := call.Do()
+		if err != nil {
+			// THIS WILL TELL YOU EXACTLY WHICH CALL FAILED
+			fmt.Fprintf(os.Stderr, "[API ERROR] Metrics: %s | Dim: %s | Error: %v\n", metrics, dimensions, err)
+		}
+		return res, err
 	}
 
 	// Overview
@@ -139,78 +133,89 @@ func GetChannelAnalytics(w http.ResponseWriter, r *http.Request) {
 			AVD:            row[2].(float64),
 			AVP:            row[3].(float64),
 		}
-	}
-
-	// Impressions + CTR
-	if res, err := fetchChannelMetrics(
-		"impressions,impressionClickThroughRate,uniqueViewers", ""); err == nil && len(res.Rows) > 0 {
-		row := res.Rows[0]
-		analytics.Impressions = ImpressionStats{
-			Impressions: row[0].(float64),
-			CTR:         row[1].(float64),
-			UniqueViews: row[2].(float64),
-		}
+	} else {
+		return ChannelAnalyticsResponse{}, err
 	}
 
 	// Subscriber growth over time
 	if res, err := fetchChannelMetrics(
 		"subscribersGained,subscribersLost", "day"); err == nil {
 		analytics.SubscriberGrowth = toRows(res)
+	} else {
+		return ChannelAnalyticsResponse{}, err
 	}
 
 	// Top videos by views
-	if res, err := fetchChannelMetrics(
-		"views,estimatedMinutesWatched,averageViewPercentage", "video"); err == nil {
-		call := svc.Reports.Query().
-			Ids("channel==MINE").
-			StartDate(startDate).
-			EndDate(endDate).
-			Metrics("views,estimatedMinutesWatched,averageViewPercentage").
-			Dimensions("video").
-			Sort("-views").
-			MaxResults(20)
-		if topRes, err := call.Do(); err == nil {
-			analytics.TopVideos = toRows(topRes)
-		}
-		_ = res
+	topVideos, err := GetTopVideoIDs(startDate, endDate, 10)
+	if err != nil {
+		return ChannelAnalyticsResponse{}, err
 	}
+
+	var topVideosWG sync.WaitGroup
+	var TopVideos = make([]VideoDetail, len(topVideos))
+	for idx, vidID := range topVideos {
+		topVideosWG.Add(1)
+		go func(i int, id string) {
+			defer topVideosWG.Done()
+			video, err := GetVideo(id)
+			if err != nil {
+				return
+			}
+
+			TopVideos[i] = video
+		}(idx, vidID)
+	}
+
+	topVideosWG.Wait()
+	analytics.TopVideos = TopVideos
 
 	// Traffic sources
 	if res, err := fetchChannelMetrics(
 		"views,estimatedMinutesWatched", "insightTrafficSourceType"); err == nil {
 		analytics.TrafficSources = toRows(res)
+	} else {
+		return ChannelAnalyticsResponse{}, err
 	}
 
 	// Geography
 	if res, err := fetchChannelMetrics(
 		"views,estimatedMinutesWatched", "country"); err == nil {
 		analytics.Geography = toRows(res)
+	} else {
+		return ChannelAnalyticsResponse{}, err
 	}
 
 	// Device types
 	if res, err := fetchChannelMetrics(
 		"views,estimatedMinutesWatched", "deviceType"); err == nil {
 		analytics.DeviceTypes = toRows(res)
+	} else {
+		return ChannelAnalyticsResponse{}, err
 	}
 
 	// Age groups
 	if res, err := fetchChannelMetrics(
 		"viewerPercentage", "ageGroup"); err == nil {
 		analytics.AgeGroups = toRows(res)
+	} else {
+		return ChannelAnalyticsResponse{}, err
 	}
 
 	// Gender
 	if res, err := fetchChannelMetrics(
 		"viewerPercentage", "gender"); err == nil {
 		analytics.Gender = toRows(res)
+	} else {
+		return ChannelAnalyticsResponse{}, err
 	}
 
 	// Daily breakdown
 	if res, err := fetchChannelMetrics(
 		"views,estimatedMinutesWatched,subscribersGained,likes,shares", "day"); err == nil {
 		analytics.DailyBreakdown = toRows(res)
+	} else {
+		return ChannelAnalyticsResponse{}, err
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(analytics)
+	return analytics, nil
 }

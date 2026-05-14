@@ -2,8 +2,8 @@ package config
 
 import (
 	"context"
+	"fmt"
 	"net/http"
-	"os"
 
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
@@ -12,8 +12,8 @@ import (
 
 func GetOAuthConfig() *oauth2.Config {
 	return &oauth2.Config{
-		ClientID:     os.Getenv("YOUTUBE_CLIENT_ID"),
-		ClientSecret: os.Getenv("YOUTUBE_CLIENT_SECRET"),
+		ClientID:     GetConfig().YOUTUBE_CLIENT_ID,
+		ClientSecret: GetConfig().YOUTUBE_CLIENT_SECRET,
 		RedirectURL:  "http://localhost:9999/callback",
 		Scopes: []string{
 			youtube.YoutubeReadonlyScope,
@@ -25,6 +25,14 @@ func GetOAuthConfig() *oauth2.Config {
 
 func GetOAuthClient() (*http.Client, error) {
 	cfg := GetOAuthConfig()
+	if cfg == nil {
+		return nil, fmt.Errorf("Invalid config, Issue with config.json or project")
+	}
+
+	if GetConfig().YouTubeRefreshToken == "" {
+		return nil, fmt.Errorf("Invalid YouTubeRefreshToken, Please edit the config.json")
+	}
+
 	token := &oauth2.Token{
 		RefreshToken: GetConfig().YouTubeRefreshToken,
 	}

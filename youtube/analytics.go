@@ -2,14 +2,12 @@ package youtube
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"net/http"
+	"os"
 	"strings"
 	"time"
 
 	"github.com/ChezyName/YouTube-MCP/config"
-	"github.com/gorilla/mux"
 	"google.golang.org/api/option"
 	youtubeAnalytics "google.golang.org/api/youtubeanalytics/v2"
 )
@@ -65,15 +63,7 @@ Params:
 	end: end date for range
 	range: custom numbers, in days or Lifetime - this superseeds all
 */
-func GetAnalyticsForVideo(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	videoID := vars["id"]
-
-	//given URL...?start=XYZ&end=XYZ
-	endDate := r.URL.Query().Get("end")
-	startDate := r.URL.Query().Get("start")
-	inRange := r.URL.Query().Get("range")
-
+func GetAnalyticsForVideo(videoID string, startDate string, endDate string, inRange string) (AnalyticsResponse, error) {
 	if endDate == "" {
 		endDate = time.Now().Format("2006-01-02")
 	}
@@ -97,14 +87,12 @@ func GetAnalyticsForVideo(w http.ResponseWriter, r *http.Request) {
 
 	client, err := config.GetOAuthClient()
 	if err != nil {
-		http.Error(w, "OAuth client error: "+err.Error(), http.StatusInternalServerError)
-		return
+		return AnalyticsResponse{}, err
 	}
 
 	svc, err := youtubeAnalytics.NewService(context.Background(), option.WithHTTPClient(client))
 	if err != nil {
-		http.Error(w, "Failed to create Analytics client: "+err.Error(), http.StatusInternalServerError)
-		return
+		return AnalyticsResponse{}, err
 	}
 
 	analytics := AnalyticsResponse{
@@ -145,12 +133,11 @@ func GetAnalyticsForVideo(w http.ResponseWriter, r *http.Request) {
 
 	// Impressions + CTR
 	if res, err := fetchMetrics(svc, videoID, startDate, endDate,
-		"impressions,impressionClickThroughRate,uniqueViewers", ""); err == nil && len(res.Rows) > 0 {
+		"videoThumbnailImpressions,videoThumbnailImpressionsClickRate,uniqueViewers", ""); err == nil && len(res.Rows) > 0 {
 		row := res.Rows[0]
 		analytics.Impressions = ImpressionStats{
 			Impressions: row[0].(float64),
 			CTR:         row[1].(float64),
-			UniqueViews: row[2].(float64),
 		}
 	}
 
@@ -184,6 +171,43 @@ func GetAnalyticsForVideo(w http.ResponseWriter, r *http.Request) {
 		analytics.DailyBreakdown = toRows(res)
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(analytics)
+	return analytics, nil
+}
+
+func GetTopVideoIDs(startDate string, endDate string, Limit int64) ([]string, error) {
+	client, err := config.GetOAuthClient()
+	if err != nil {
+		return nil, err
+	}
+
+	svc, err := youtubeAnalytics.NewService(context.Background(), option.WithHTTPClient(client))
+	if err != nil {
+		return nil, err
+	}
+
+	// This is the ONLY guaranteed-stable "Top Videos" query
+	call := svc.Reports.Query().
+		Ids("channel==MINE").
+		StartDate(startDate).
+		EndDate(endDate).
+		Metrics("views").    // Only query views to find the "top" list
+		Dimensions("video"). // Group by video
+		Sort("-views").      // Sort descending
+		MaxResults(Limit)    // Get top X
+
+	res, err := call.Do()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "[TOP VIDEOS ERROR]: %v\n", err)
+		return nil, err
+	}
+
+	var videoIDs []string
+	for _, row := range res.Rows {
+		// row[0] is the video ID
+		if id, ok := row[0].(string); ok {
+			videoIDs = append(videoIDs, id)
+		}
+	}
+
+	return videoIDs, nil
 }

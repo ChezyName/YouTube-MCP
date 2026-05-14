@@ -53,7 +53,6 @@ type EngagementStats struct {
 type ImpressionStats struct {
 	Impressions float64 `json:"impressions"`
 	CTR         float64 `json:"click_through_rate"`
-	UniqueViews float64 `json:"unique_viewers"`
 }
 
 type RowData struct {
@@ -77,31 +76,30 @@ type AnalyticsResponse struct {
 }
 
 type ChannelStats struct {
-	ID              string `json:"id"`
-	Title           string `json:"title"`
-	Description     string `json:"description"`
-	CustomURL       string `json:"custom_url"`
-	PublishedAt     string `json:"published_at"`
-	Thumbnail       string `json:"thumbnail"`
-	Banner          string `json:"banner"`
-	SubscriberCount uint64 `json:"subscriber_count"`
-	VideoCount      uint64 `json:"video_count"`
-	TotalViewCount  uint64 `json:"total_view_count"`
-	Country         string `json:"country"`
+	ID              string `json:"id" jsonschema:"Channel ID"`
+	Title           string `json:"title" jsonschema:"Title or name of the channel"`
+	Description     string `json:"description" jsonschema:"Channel Description"`
+	CustomURL       string `json:"custom_url" jsonschema:"Channel URL - typically the Handle"`
+	PublishedAt     string `json:"published_at" jsonschema:"When the channel was publisehd or created"`
+	Thumbnail       string `json:"thumbnail" jsonschema:"The channel icon url"`
+	Banner          string `json:"banner" jsonschema:"The channel banner url"`
+	SubscriberCount uint64 `json:"subscriber_count" jsonschema:"The number of subscribers"`
+	VideoCount      uint64 `json:"video_count" jsonschema:"The number of videos"`
+	TotalViewCount  uint64 `json:"total_view_count" jsonschema:"The total views"`
+	Country         string `json:"country" jsonschema:"The country"`
 }
 
 type ChannelAnalyticsResponse struct {
-	DateRange        DateRange       `json:"date_range"`
-	Overview         OverviewStats   `json:"overview"`
-	Impressions      ImpressionStats `json:"impressions"`
-	SubscriberGrowth []RowData       `json:"subscriber_growth"`
-	TopVideos        []RowData       `json:"top_videos"`
-	TrafficSources   []RowData       `json:"traffic_sources"`
-	Geography        []RowData       `json:"geography"`
-	DeviceTypes      []RowData       `json:"device_types"`
-	AgeGroups        []RowData       `json:"age_groups"`
-	Gender           []RowData       `json:"gender"`
-	DailyBreakdown   []RowData       `json:"daily_breakdown"`
+	DateRange        DateRange     `json:"date_range"`
+	Overview         OverviewStats `json:"overview"`
+	SubscriberGrowth []RowData     `json:"subscriber_growth"`
+	TopVideos        []VideoDetail `json:"top_videos"`
+	TrafficSources   []RowData     `json:"traffic_sources"`
+	Geography        []RowData     `json:"geography"`
+	DeviceTypes      []RowData     `json:"device_types"`
+	AgeGroups        []RowData     `json:"age_groups"`
+	Gender           []RowData     `json:"gender"`
+	DailyBreakdown   []RowData     `json:"daily_breakdown"`
 }
 
 type Comment struct {
