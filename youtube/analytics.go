@@ -10,6 +10,7 @@ import (
 
 	"github.com/ChezyName/YouTube-MCP/config"
 	"google.golang.org/api/option"
+	"google.golang.org/api/youtube/v3"
 	youtubeAnalytics "google.golang.org/api/youtubeanalytics/v2"
 )
 
@@ -226,9 +227,15 @@ func GetTopVideoIDs(startDate string, endDate string, Limit int64) ([]string, er
 		return nil, err
 	}
 
-	svc, err := youtubeAnalytics.NewService(context.Background(), option.WithHTTPClient(client))
+	ctx := context.Background()
+	svc, err := youtubeAnalytics.NewService(ctx, option.WithHTTPClient(client))
+	dataSvc, dataErr := youtube.NewService(ctx, option.WithHTTPClient(client))
 	if err != nil {
 		return nil, err
+	}
+
+	if dataErr != nil {
+		return nil, dataErr
 	}
 
 	// This is the ONLY guaranteed-stable "Top Videos" query
@@ -236,10 +243,10 @@ func GetTopVideoIDs(startDate string, endDate string, Limit int64) ([]string, er
 		Ids("channel==MINE").
 		StartDate(startDate).
 		EndDate(endDate).
-		Metrics("views").    // Only query views to find the "top" list
-		Dimensions("video"). // Group by video
-		Sort("-views").      // Sort descending
-		MaxResults(Limit)    // Get top X
+		Metrics("views").
+		Dimensions("video").
+		Sort("-views").
+		MaxResults(int64(Limit * 5)) //get the top but need etra to make sure we can date filter
 
 	res, err := call.Do()
 	if err != nil {
@@ -247,13 +254,52 @@ func GetTopVideoIDs(startDate string, endDate string, Limit int64) ([]string, er
 		return nil, err
 	}
 
-	var videoIDs []string
+	if len(res.Rows) == 0 {
+		return []string{}, nil
+	}
+
+	var rawIDs []string
 	for _, row := range res.Rows {
-		// row[0] is the video ID
-		if id, ok := row[0].(string); ok {
-			videoIDs = append(videoIDs, id)
+		rawIDs = append(rawIDs, row[0].(string))
+	}
+
+	startPtr, _ := time.Parse("2006-01-02", startDate)
+	endPtr, _ := time.Parse("2006-01-02", endDate)
+
+	var filteredIDs []string
+
+	//Use Data API to make sure each video is part of the top X [50 videos at a time]
+	for i := 0; i < len(rawIDs); i += 50 {
+		endIdx := i + 50
+		if endIdx > len(rawIDs) {
+			endIdx = len(rawIDs)
+		}
+
+		chunk := rawIDs[i:endIdx]
+		videoDataRes, err := dataSvc.Videos.List([]string{"snippet"}).
+			Id(strings.Join(chunk, ",")).
+			Do()
+		if err != nil {
+			return nil, fmt.Errorf("Data API Error: %v", err)
+		}
+
+		for _, item := range videoDataRes.Items {
+			pubTime, err := time.Parse(time.RFC3339, item.Snippet.PublishedAt)
+			if err != nil {
+				continue
+			}
+
+			// 3. Filter: Only include if the video was PUBLISHED within the range
+			if (pubTime.After(startPtr) || pubTime.Equal(startPtr)) &&
+				(pubTime.Before(endPtr) || pubTime.Equal(endPtr)) {
+				filteredIDs = append(filteredIDs, item.Id)
+
+				if len(filteredIDs) >= int(Limit) {
+					return filteredIDs, nil
+				}
+			}
 		}
 	}
 
-	return videoIDs, nil
+	return filteredIDs, nil
 }

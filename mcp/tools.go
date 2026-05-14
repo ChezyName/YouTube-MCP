@@ -2,6 +2,10 @@ package mcp
 
 import (
 	"context"
+	"fmt"
+	"strings"
+	"sync"
+	"time"
 
 	"github.com/ChezyName/YouTube-MCP/youtube"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
@@ -38,7 +42,7 @@ func AddTools(server *mcp.Server) {
 	mcp.AddTool(server, &mcp.Tool{
 		Name:  "get_channel_analytics",
 		Title: "Channel Analytics Data",
-		Description: `[PRIVATE API] Get the users channel Analytics given a start_date and end_date (or range in days),
+		Description: `[PRIVATE API] Get the users channel Analytics given a start_date and end_date (or range in days), defaults to lifetime
 		Returns views, watch time hours, average view duration, average view percentage, likes, dislikes, comments, shares, subscribers, impressions,
 		click through rate, unique views, subscriber grouth graph, top views, traffic sources, geography, device types, age groups, gender, and daily breakdown`,
 	}, GetChannelAnalytics)
@@ -46,7 +50,7 @@ func AddTools(server *mcp.Server) {
 	mcp.AddTool(server, &mcp.Tool{
 		Name:  "get_video_analytics",
 		Title: "Video Analytics Data",
-		Description: `[PRIVATE API] Get the users Video Analytics given a video_id, start_date and end_date (or range in days),
+		Description: `[PRIVATE API] Get the users Video Analytics given a video_id, start_date and end_date (or range in days), defaults to last 90 days,
 		Returns views, watch time hours, average view duration, average view percentage, likes, dislikes, comments, shares, subscribers, impressions,
 		click through rate, unique views, traffic sources, geography, device types, age groups, gender, and daily breakdown`,
 	}, GetVideoAnalytics)
@@ -56,6 +60,12 @@ func AddTools(server *mcp.Server) {
 		Title:       "Video Transcript",
 		Description: "[PUBLIC API] Returns a structured list of the video transcript",
 	}, GetVideoTranscript)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "get_top_videos",
+		Title:       "Top Videos",
+		Description: "[PUBLIC API] Returns a list of the top videos given a date range. Defaults to last 90days and top 10. Details show the public basic data such as name, description, and likes.",
+	}, GetTopVideos)
 }
 
 func ListVideos(ctx context.Context, req *mcp.CallToolRequest, input interface{}) (
@@ -104,7 +114,11 @@ func GetChannelAnalytics(ctx context.Context, req *mcp.CallToolRequest, input Ch
 	youtube.ChannelAnalyticsResponse,
 	error,
 ) {
-	analytics, err := youtube.GetChannelAnalytics(input.StartDate, input.EndDate, input.Range)
+	var iRange = ""
+	if input.Range != nil {
+		iRange = *input.Range
+	}
+	analytics, err := youtube.GetChannelAnalytics(input.StartDate, input.EndDate, iRange)
 	return nil, analytics, err
 }
 
@@ -113,7 +127,11 @@ func GetVideoAnalytics(ctx context.Context, req *mcp.CallToolRequest, input Vide
 	youtube.AnalyticsResponse,
 	error,
 ) {
-	analytics, err := youtube.GetAnalyticsForVideo(input.ID, input.StartDate, input.EndDate, input.Range)
+	var iRange = ""
+	if input.Range != nil {
+		iRange = *input.Range
+	}
+	analytics, err := youtube.GetAnalyticsForVideo(input.ID, input.StartDate, input.EndDate, iRange)
 	return nil, analytics, err
 }
 
@@ -149,4 +167,57 @@ func GetVideoTranscript(ctx context.Context, req *mcp.CallToolRequest, input Vid
 	}
 
 	return nil, outTranscript, err
+}
+
+func GetTopVideos(ctx context.Context, req *mcp.CallToolRequest, input TopVideosParams) (
+	*mcp.CallToolResult,
+	TopVideos,
+	error,
+) {
+	if input.EndDate == "" {
+		input.EndDate = time.Now().Format("2006-01-02")
+	}
+	if input.StartDate == "" {
+		input.StartDate = time.Now().AddDate(0, 0, -90).Format("2006-01-02")
+	}
+
+	if input.Range != nil && *input.Range != "" {
+		if strings.ToUpper(*input.Range) == "LIFETIME" {
+			input.EndDate = time.Now().Format("2006-01-02")
+			input.StartDate = "2005-01-01"
+		} else {
+			days := 90 // default
+			fmt.Sscanf(*input.Range, "%d", &days)
+			input.StartDate = time.Now().AddDate(0, 0, -days).Format("2006-01-02")
+			input.EndDate = time.Now().Format("2006-01-02")
+		}
+	}
+
+	var Limit = 10
+	if input.Limit != nil {
+		Limit = *input.Limit
+	}
+	videos, err := youtube.GetTopVideoIDs(input.StartDate, input.EndDate, int64(Limit))
+	if !input.VideoDetails || err != nil {
+		return nil, TopVideos{Count: len(videos), Videos: videos, Details: false}, err
+	}
+
+	var wg sync.WaitGroup
+	var videosDetails = make([]*youtube.VideoDetail, len(videos))
+	for i, id := range videos {
+		wg.Add(1)
+		go func(identifier string, index int) {
+			defer wg.Done()
+			details, err := youtube.GetVideo(identifier)
+			if err != nil {
+				videosDetails[index] = nil
+			} else {
+				videosDetails[index] = &details
+			}
+
+		}(id, i)
+	}
+	wg.Wait()
+
+	return nil, TopVideos{Count: len(videos), Videos: videos, Details: true, VideoDetails: videosDetails}, err
 }

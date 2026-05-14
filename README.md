@@ -9,6 +9,9 @@ Needs the following APIs from Google
 * Needs OAuth for Private Data + User as TestUser
 
 TODO:
-> Logger (custom)
+> Video Search
+> GetTopVideos (Top X)
+> GetRetentionGraph
 
-MCP local with Claude Desktop -> Needs Go Application as Single App to Download (Store Config Somewhere?)
+> Installer (Go Lang)
+> Full Docs & Step-by-Step Instillation

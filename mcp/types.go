@@ -13,22 +13,30 @@ type VideoParams struct {
 	ID string `json:"id" jsonschema:"YouTube video ID"`
 }
 
+type TopVideosParams struct {
+	Range        *string `json:"range,omitempty" jsonschema:"Range in days, overrides the start_date and end_date, lifetime is accepted"`
+	StartDate    string  `json:"start_date" jsonschema:"The start date in YYYY-MM-DD format"`
+	EndDate      string  `json:"end_date" jsonschema:"The end date in YYYY-MM-DD format"`
+	Limit        *int    `json:"limit,omitempty" jsonschema:"The max number of videos to return"`
+	VideoDetails bool    `json:"details" jsonschema:"Boolean which dictates grabbing the video details"`
+}
+
 type VideoCommentsParams struct {
 	ID    string `json:"id" jsonschema:"YouTube video ID"`
 	Limit *int   `json:"limit,omitempty" jsonschema:"The max number of comments loaded. default=20"`
 }
 
 type ChannelAnalyticsParams struct {
-	Range     string `json:"range" jsonschema:"Range in days, overrides the start_date and end_date, lifetime is accepted"`
-	StartDate string `json:"start_date" jsonschema:"The start date in YYYY-MM-DD format"`
-	EndDate   string `json:"end_date" jsonschema:"The end date in YYYY-MM-DD format"`
+	Range     *string `json:"range,omitempty" jsonschema:"Range in days, overrides the start_date and end_date, lifetime is accepted"`
+	StartDate string  `json:"start_date" jsonschema:"The start date in YYYY-MM-DD format"`
+	EndDate   string  `json:"end_date" jsonschema:"The end date in YYYY-MM-DD format"`
 }
 
 type VideoAnalyticsParams struct {
-	ID        string `json:"id" jsonschema:"YouTube video ID"`
-	Range     string `json:"range" jsonschema:"Range in days, overrides the start_date and end_date, lifetime is accepted"`
-	StartDate string `json:"start_date" jsonschema:"The start date in YYYY-MM-DD format"`
-	EndDate   string `json:"end_date" jsonschema:"The end date in YYYY-MM-DD format"`
+	ID        string  `json:"id" jsonschema:"YouTube video ID"`
+	Range     *string `json:"range,omitempty" jsonschema:"Range in days, overrides the start_date and end_date, lifetime is accepted"`
+	StartDate string  `json:"start_date" jsonschema:"The start date in YYYY-MM-DD format"`
+	EndDate   string  `json:"end_date" jsonschema:"The end date in YYYY-MM-DD format"`
 }
 
 type TranscriptSnippet struct {
@@ -41,4 +49,11 @@ type Transcript struct {
 	Snippets     []TranscriptSnippet `json:"snippets"`
 	Language     string              `json:"language"`
 	LanguageCode string              `json:"language_code"`
+}
+
+type TopVideos struct {
+	Count        int                    `json:"count" jsonschema:"The number of videos found"`
+	Videos       []string               `json:"videos" jsonschema:"The video IDs"`
+	Details      bool                   `json:"details" jsonschema:"If video details are avalable"`
+	VideoDetails []*youtube.VideoDetail `json:"video_details" jsonschema:"The detailed list of top x videos"`
 }
