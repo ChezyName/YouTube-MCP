@@ -55,7 +55,7 @@ func AddTools(server *mcp.Server) {
 		Name:        "get_video_transcript",
 		Title:       "Video Transcript",
 		Description: "[PUBLIC API] Returns a structured list of the video transcript",
-	}, GetVideoComments)
+	}, GetVideoTranscript)
 }
 
 func ListVideos(ctx context.Context, req *mcp.CallToolRequest, input interface{}) (
