@@ -31,48 +31,48 @@ type VideoDetail struct {
 	CommentCount uint64 `json:"comment_count" jsonschema:"The number of comments over the video's lifetime"`
 }
 type DateRange struct {
-	Start string `json:"start"`
-	End   string `json:"end"`
+	Start string `json:"start" jsonschema:"start date"`
+	End   string `json:"end" jsonschema:"end date"`
 }
 
 type OverviewStats struct {
-	Views          float64 `json:"views"`
-	WatchTimeHours float64 `json:"watch_time_hours"`
-	AVD            float64 `json:"avg_view_duration_seconds"`
-	AVP            float64 `json:"avg_view_percentage"`
+	Views          float64 `json:"views" jsonschema:"Video views"`
+	WatchTimeHours float64 `json:"watch_time_hours" jsonschema:"Video watch time in hours"`
+	AVD            float64 `json:"avg_view_duration_seconds" jsonschema:"Video average view duration"`
+	AVP            float64 `json:"avg_view_percentage" jsonschema:"Video average view percentage"`
 }
 
 type EngagementStats struct {
-	Likes       float64 `json:"likes"`
-	Dislikes    float64 `json:"dislikes"`
-	Comments    float64 `json:"comments"`
-	Shares      float64 `json:"shares"`
-	Subscribers float64 `json:"subscribers_gained"`
+	Likes       float64 `json:"likes" jsonschema:"Video likes"`
+	Dislikes    float64 `json:"dislikes" jsonschema:"Video dislikes (return YouTube Dislikes)"`
+	Comments    float64 `json:"comments" jsonschema:"Number of Video Comments"`
+	Shares      float64 `json:"shares" jsonschema:"Number of Video Shares"`
+	Subscribers float64 `json:"subscribers_gained" jsonschema:"Number of Subscribers Gained on this Video"`
 }
 
 type ImpressionStats struct {
-	Impressions float64 `json:"impressions"`
-	CTR         float64 `json:"click_through_rate"`
+	Impressions float64 `json:"impressions" jsonschema:"Number of Impressions"`
+	CTR         float64 `json:"click_through_rate" jsonschema:"Click through Rate"`
 }
 
 type RowData struct {
-	Label  string  `json:"label"`
-	Value  float64 `json:"value"`
+	Label  string  `json:"label" jsonschema:"title"`
+	Value  float64 `json:"value" jsonschema:"value"`
 	Value2 float64 `json:"value2,omitempty"` // for multi-metric rows e.g. retention %
 }
 
 type AnalyticsResponse struct {
-	VideoID     string          `json:"video_id"`
-	DateRange   DateRange       `json:"date_range"`
-	Overview    OverviewStats   `json:"overview"`
-	Engagement  EngagementStats `json:"engagement"`
-	Impressions ImpressionStats `json:"impressions"`
+	VideoID     string          `json:"video_id" jsonschema:"The ID of the video"`
+	DateRange   DateRange       `json:"date_range" jsonschema:"Base stats such as views, watch time, AVD and AVP"`
+	Overview    OverviewStats   `json:"overview" jsonschema:"Base stats such as views, watch time, AVD and AVP"`
+	Engagement  EngagementStats `json:"engagement" jsonschema:"Engagement stats for the video"`
+	Impressions ImpressionStats `json:"impressions" jsonschema:"Impression stats for the video"`
 	//Audience       AudienceStats   `json:"audience"`
-	TrafficSources []RowData `json:"traffic_sources"`
-	Retention      []RowData `json:"retention"`
-	Geography      []RowData `json:"geography"`
-	DeviceTypes    []RowData `json:"device_types"`
-	DailyBreakdown []RowData `json:"daily_breakdown"`
+	TrafficSources []RowData `json:"traffic_sources" jsonschema:"Where users are seeing the video"`
+	Retention      []RowData `json:"retention" jsonschema:"The retention graph"`
+	Geography      []RowData `json:"geography" jsonschema:"Where users are watching the videos"`
+	DeviceTypes    []RowData `json:"device_types" jsonschema:"The devices users are watching the video on"`
+	DailyBreakdown []RowData `json:"daily_breakdown" jsonschema:"Daily stats"`
 }
 
 type ChannelStats struct {
@@ -90,16 +90,16 @@ type ChannelStats struct {
 }
 
 type ChannelAnalyticsResponse struct {
-	DateRange        DateRange     `json:"date_range"`
-	Overview         OverviewStats `json:"overview"`
-	SubscriberGrowth []RowData     `json:"subscriber_growth"`
-	TopVideos        []VideoDetail `json:"top_videos"`
-	TrafficSources   []RowData     `json:"traffic_sources"`
-	Geography        []RowData     `json:"geography"`
-	DeviceTypes      []RowData     `json:"device_types"`
-	AgeGroups        []RowData     `json:"age_groups"`
-	Gender           []RowData     `json:"gender"`
-	DailyBreakdown   []RowData     `json:"daily_breakdown"`
+	DateRange        DateRange     `json:"date_range" jsonschema:"Date range for the channel data"`
+	Overview         OverviewStats `json:"overview" jsonschema:"Base stats such as views, watch time, AVD and AVP"`
+	SubscriberGrowth []RowData     `json:"subscriber_growth" jsonschema:"Graph of Subscriber growth"`
+	TopVideos        []VideoDetail `json:"top_videos" jsonschema:"Top 10 views"`
+	TrafficSources   []RowData     `json:"traffic_sources" jsonschema:"Where users are seeing the video from"`
+	Geography        []RowData     `json:"geography" jsonschema:"Locations of those who watch the video"`
+	DeviceTypes      []RowData     `json:"device_types" jsonschema:"What devices users use"`
+	AgeGroups        []RowData     `json:"age_groups" jsonschema:"The age range of users"`
+	Gender           []RowData     `json:"gender" jsonschema:"The gender of users"`
+	DailyBreakdown   []RowData     `json:"daily_breakdown" jsonschema:"Breakdown of views, subs gained, likes, shares per day"`
 }
 
 type Comment struct {

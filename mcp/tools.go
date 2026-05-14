@@ -31,9 +31,10 @@ func AddTools(server *mcp.Server) {
 	mcp.AddTool(server, &mcp.Tool{
 		Name:        "get_channel",
 		Title:       "Channel Data",
-		Description: "[PUBLIC API] Gets a limited number of coments from a given video, returns the author, text, likecount, publishedat, updatedat, and id of the comment",
+		Description: "[PUBLIC API] Gets the users channel with only the public information such as name, handle, bannel, icon, and description.",
 	}, GetChannel)
 
+	//Analytics from the private youtube-analytics API
 	mcp.AddTool(server, &mcp.Tool{
 		Name:  "get_channel_analytics",
 		Title: "Channel Analytics Data",
@@ -41,6 +42,14 @@ func AddTools(server *mcp.Server) {
 		Returns views, watch time hours, average view duration, average view percentage, likes, dislikes, comments, shares, subscribers, impressions,
 		click through rate, unique views, subscriber grouth graph, top views, traffic sources, geography, device types, age groups, gender, and daily breakdown`,
 	}, GetChannelAnalytics)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:  "get_video_analytics",
+		Title: "Video Analytics Data",
+		Description: `[PRIVATE API] Get the users Video Analytics given a video_id, start_date and end_date (or range in days),
+		Returns views, watch time hours, average view duration, average view percentage, likes, dislikes, comments, shares, subscribers, impressions,
+		click through rate, unique views, traffic sources, geography, device types, age groups, gender, and daily breakdown`,
+	}, GetVideoAnalytics)
 }
 
 func ListVideos(ctx context.Context, req *mcp.CallToolRequest, input interface{}) (
@@ -91,4 +100,23 @@ func GetChannelAnalytics(ctx context.Context, req *mcp.CallToolRequest, input Ch
 ) {
 	analytics, err := youtube.GetChannelAnalytics(input.StartDate, input.EndDate, input.Range)
 	return nil, analytics, err
+}
+
+func GetVideoAnalytics(ctx context.Context, req *mcp.CallToolRequest, input VideoAnalyticsParams) (
+	*mcp.CallToolResult,
+	youtube.AnalyticsResponse,
+	error,
+) {
+	analytics, err := youtube.GetAnalyticsForVideo(input.ID, input.StartDate, input.EndDate, input.Range)
+	return nil, analytics, err
+}
+
+// TODO: Search for video by tag, keywords, title, description, basically youtube SearchForVideo
+// @returns: array of videos with basic info -> id, title, description
+func SearchForVideo(ctx context.Context, req *mcp.CallToolRequest, input interface{}) (
+	*mcp.CallToolResult,
+	interface{},
+	error,
+) {
+	return nil, nil, nil
 }
