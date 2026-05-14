@@ -50,6 +50,12 @@ func AddTools(server *mcp.Server) {
 		Returns views, watch time hours, average view duration, average view percentage, likes, dislikes, comments, shares, subscribers, impressions,
 		click through rate, unique views, traffic sources, geography, device types, age groups, gender, and daily breakdown`,
 	}, GetVideoAnalytics)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "get_video_transcript",
+		Title:       "Video Transcript",
+		Description: "[PUBLIC API] Returns a structured list of the video transcript",
+	}, GetVideoComments)
 }
 
 func ListVideos(ctx context.Context, req *mcp.CallToolRequest, input interface{}) (
@@ -119,4 +125,28 @@ func SearchForVideo(ctx context.Context, req *mcp.CallToolRequest, input interfa
 	error,
 ) {
 	return nil, nil, nil
+}
+
+func GetVideoTranscript(ctx context.Context, req *mcp.CallToolRequest, input VideoParams) (
+	*mcp.CallToolResult,
+	Transcript,
+	error,
+) {
+	transcript, err := youtube.GetVideoTranscript(input.ID)
+	if err != nil {
+		return nil, Transcript{}, err
+	}
+
+	outTranscript := Transcript{}
+	outTranscript.Language = transcript.Language
+	outTranscript.LanguageCode = transcript.LanguageCode
+	for _, snippet := range transcript.Snippets {
+		outTranscript.Snippets = append(outTranscript.Snippets, TranscriptSnippet{
+			Text:     snippet.Text,
+			Start:    snippet.Start,
+			Duration: snippet.Duration,
+		})
+	}
+
+	return nil, outTranscript, err
 }

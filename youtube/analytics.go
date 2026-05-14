@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/ChezyName/YouTube-MCP/config"
@@ -63,6 +64,7 @@ Params:
 	end: end date for range
 	range: custom numbers, in days or Lifetime - this superseeds all
 */
+//TODO: use waitgroup to load all data async (all at once in threads)
 func GetAnalyticsForVideo(videoID string, startDate string, endDate string, inRange string) (AnalyticsResponse, error) {
 	if endDate == "" {
 		endDate = time.Now().Format("2006-01-02")
@@ -100,77 +102,121 @@ func GetAnalyticsForVideo(videoID string, startDate string, endDate string, inRa
 		DateRange: DateRange{Start: startDate, End: endDate},
 	}
 
-	// Metrics for the main stats — views, watch time, AVD, AVP
-	if res, err := fetchMetrics(svc, videoID, startDate, endDate,
-		"views,estimatedMinutesWatched,averageViewDuration,averageViewPercentage", ""); err == nil && len(res.Rows) > 0 {
-		row := res.Rows[0]
-		analytics.Overview = OverviewStats{
-			Views:          row[0].(float64),
-			WatchTimeHours: row[1].(float64) / 60,
-			AVD:            row[2].(float64),
-			AVP:            row[3].(float64),
-		}
+	var analyticsWaitgroup sync.WaitGroup
+	var analyticsMutex sync.Mutex
+
+	runTask := func(task func()) {
+		analyticsWaitgroup.Add(1)
+		go func() {
+			defer analyticsWaitgroup.Done()
+			task()
+		}()
 	}
+
+	// Metrics for the main stats — views, watch time, AVD, AVP
+	runTask(func() {
+		if res, err := fetchMetrics(svc, videoID, startDate, endDate,
+			"views,estimatedMinutesWatched,averageViewDuration,averageViewPercentage", ""); err == nil && len(res.Rows) > 0 {
+			row := res.Rows[0]
+			analyticsMutex.Lock()
+			analytics.Overview = OverviewStats{
+				Views:          row[0].(float64),
+				WatchTimeHours: row[1].(float64) / 60,
+				AVD:            row[2].(float64),
+				AVP:            row[3].(float64),
+			}
+			analyticsMutex.Unlock()
+		}
+	})
 
 	// Metrics for other stats (dislikes removed - must use returnYouTubeDislikes) — likes, dislikes, comments, shares, subs
-	if res, err := fetchMetrics(svc, videoID, startDate, endDate,
-		"likes,dislikes,comments,shares,subscribersGained", ""); err == nil && len(res.Rows) > 0 {
-		var trueDislikes = -1
-		dislikes, err := fetchDislikes(videoID)
-		if err != nil {
-			trueDislikes = dislikes.Dislikes
-		}
+	runTask(func() {
+		if res, err := fetchMetrics(svc, videoID, startDate, endDate,
+			"likes,dislikes,comments,shares,subscribersGained", ""); err == nil && len(res.Rows) > 0 {
+			var trueDislikes = -1
+			dislikes, err := fetchDislikes(videoID)
+			if err == nil {
+				trueDislikes = dislikes.Dislikes
+			}
 
-		row := res.Rows[0]
-		analytics.Engagement = EngagementStats{
-			Likes:       row[0].(float64),
-			Dislikes:    float64(trueDislikes), //-1 for invalid / error
-			Comments:    row[2].(float64),
-			Shares:      row[3].(float64),
-			Subscribers: row[4].(float64),
+			row := res.Rows[0]
+			analyticsMutex.Lock()
+			analytics.Engagement = EngagementStats{
+				Likes:       row[0].(float64),
+				Dislikes:    float64(trueDislikes), //-1 for invalid / error
+				Comments:    row[2].(float64),
+				Shares:      row[3].(float64),
+				Subscribers: row[4].(float64),
+			}
+			analyticsMutex.Unlock()
 		}
-	}
+	})
 
 	// Impressions + CTR
-	if res, err := fetchMetrics(svc, videoID, startDate, endDate,
-		"videoThumbnailImpressions,videoThumbnailImpressionsClickRate,uniqueViewers", ""); err == nil && len(res.Rows) > 0 {
-		row := res.Rows[0]
-		analytics.Impressions = ImpressionStats{
-			Impressions: row[0].(float64),
-			CTR:         row[1].(float64),
+	runTask(func() {
+		if res, err := fetchMetrics(svc, videoID, startDate, endDate,
+			"videoThumbnailImpressions,videoThumbnailImpressionsClickRate,uniqueViewers", ""); err == nil && len(res.Rows) > 0 {
+			row := res.Rows[0]
+			analyticsMutex.Lock()
+			analytics.Impressions = ImpressionStats{
+				Impressions: row[0].(float64),
+				CTR:         row[1].(float64),
+			}
+			analyticsMutex.Unlock()
 		}
-	}
+	})
 
 	// Traffic sources
-	if res, err := fetchMetrics(svc, videoID, startDate, endDate,
-		"views,estimatedMinutesWatched", "insightTrafficSourceType"); err == nil {
-		analytics.TrafficSources = toRows(res)
-	}
+	runTask(func() {
+		if res, err := fetchMetrics(svc, videoID, startDate, endDate,
+			"views,estimatedMinutesWatched", "insightTrafficSourceType"); err == nil {
+			analyticsMutex.Lock()
+			analytics.TrafficSources = toRows(res)
+			analyticsMutex.Unlock()
+		}
+	})
 
 	// Retention graph (full curve)
-	if res, err := fetchMetrics(svc, videoID, startDate, endDate,
-		"audienceWatchRatio,relativeRetentionPerformance", "elapsedVideoTimeRatio"); err == nil {
-		analytics.Retention = toRows(res)
-	}
+	runTask(func() {
+		if res, err := fetchMetrics(svc, videoID, startDate, endDate,
+			"audienceWatchRatio,relativeRetentionPerformance", "elapsedVideoTimeRatio"); err == nil {
+			analyticsMutex.Lock()
+			analytics.Retention = toRows(res)
+			analyticsMutex.Unlock()
+		}
+	})
 
 	// Geography
-	if res, err := fetchMetrics(svc, videoID, startDate, endDate,
-		"views,estimatedMinutesWatched", "country"); err == nil {
-		analytics.Geography = toRows(res)
-	}
+	runTask(func() {
+		if res, err := fetchMetrics(svc, videoID, startDate, endDate,
+			"views,estimatedMinutesWatched", "country"); err == nil {
+			analyticsMutex.Lock()
+			analytics.Geography = toRows(res)
+			analyticsMutex.Unlock()
+		}
+	})
 
 	// Device types
-	if res, err := fetchMetrics(svc, videoID, startDate, endDate,
-		"views,estimatedMinutesWatched", "deviceType"); err == nil {
-		analytics.DeviceTypes = toRows(res)
-	}
+	runTask(func() {
+		if res, err := fetchMetrics(svc, videoID, startDate, endDate,
+			"views,estimatedMinutesWatched", "deviceType"); err == nil {
+			analyticsMutex.Lock()
+			analytics.DeviceTypes = toRows(res)
+			analyticsMutex.Unlock()
+		}
+	})
 
 	// Daily breakdown
-	if res, err := fetchMetrics(svc, videoID, startDate, endDate,
-		"views,estimatedMinutesWatched,likes,shares", "day"); err == nil {
-		analytics.DailyBreakdown = toRows(res)
-	}
+	runTask(func() {
+		if res, err := fetchMetrics(svc, videoID, startDate, endDate,
+			"views,estimatedMinutesWatched,likes,shares", "day"); err == nil {
+			analyticsMutex.Lock()
+			analytics.DailyBreakdown = toRows(res)
+			analyticsMutex.Unlock()
+		}
+	})
 
+	analyticsWaitgroup.Wait()
 	return analytics, nil
 }
 
