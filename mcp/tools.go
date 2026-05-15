@@ -63,6 +63,15 @@ func AddTools(server *mcp.Server) {
 		Title:       "Top Videos",
 		Description: "[PUBLIC API] Returns a list of the top videos given a date range. Defaults to last 90days and top 10. Details show the public basic data such as name, description, and likes.",
 	}, GetTopVideos)
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:  "search_video",
+		Title: "Search for Videos given a query",
+		Description: `[PUBLIC API] Returns a detailed or basic list of videos found when searching for them.
+		Basic: ID, Title, Description, Thumbnail, PulishedAt
+		Detailed: ID, Title, Description, Thumbnail, PulishedAt, Duration, Views, Dislikes, Likes, CommentCount
+		`,
+	}, SearchForVideo)
 }
 
 func ListVideos(ctx context.Context, req *mcp.CallToolRequest, input ListVideoParams) (
@@ -126,12 +135,18 @@ func GetVideoAnalytics(ctx context.Context, req *mcp.CallToolRequest, input Vide
 
 // TODO: Search for video by tag, keywords, title, description, basically youtube SearchForVideo
 // @returns: array of videos with basic info -> id, title, description
-func SearchForVideo(ctx context.Context, req *mcp.CallToolRequest, input interface{}) (
+func SearchForVideo(ctx context.Context, req *mcp.CallToolRequest, input VideoSearchParams) (
 	*mcp.CallToolResult,
-	interface{},
+	VideoSearchOutput,
 	error,
 ) {
-	return nil, nil, nil
+	var Limit = 10
+	if input.Limit != nil {
+		Limit = *input.Limit
+	}
+
+	basic, detailed, err := youtube.SearchVideos(input.Query, int64(Limit), input.VideoDetails, input.SearchSelf)
+	return nil, VideoSearchOutput{Videos: basic, VideosDetailed: detailed}, err
 }
 
 func GetVideoTranscript(ctx context.Context, req *mcp.CallToolRequest, input VideoParams) (

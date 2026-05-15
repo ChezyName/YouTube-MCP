@@ -38,6 +38,18 @@ type ListVideoParams struct {
 	VideoType *youtube.VideoType `json:"content_type,omitempty" jsonschema:"The type of content, 'short', 'long', or 'both' to filter through, defaults to both"`
 }
 
+type VideoSearchParams struct {
+	Query        string `json:"query" jsonschema:"The query string that it uses to search for videos"`
+	Limit        *int   `json:"limit,omitempty" jsonschema:"The max number of comments loaded. default=20"`
+	VideoDetails bool   `json:"details" jsonschema:"Boolean which dictates grabbing the video details"`
+	SearchSelf   bool   `json:"search_self" jsonschema:"Boolean which dictates if search is self-channel, or all of youtube"`
+}
+
+type VideoSearchOutput struct {
+	Videos         []*youtube.Video       `json:"videos" jsonschema:"The found videos"`
+	VideosDetailed []*youtube.VideoDetail `json:"videos_detailed" jsonschema:"The found videos with details"`
+}
+
 type TranscriptSnippet struct {
 	Text     string  `json:"text"`
 	Start    float64 `json:"start"`

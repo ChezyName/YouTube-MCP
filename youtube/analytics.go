@@ -215,11 +215,7 @@ func GetTopVideoIDs(startDate string, endDate string, Limit int64, vType *VideoT
 
 	ctx := context.Background()
 	//do not use analytics, shows private or unlisted videos
-	//svc, err := youtubeAnalytics.NewService(ctx, option.WithHTTPClient(client))
 	dataSvc, dataErr := youtube.NewService(ctx, option.WithHTTPClient(client))
-	if err != nil {
-		return nil, err
-	}
 
 	if dataErr != nil {
 		return nil, dataErr
