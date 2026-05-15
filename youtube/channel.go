@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"regexp"
 	"sync"
 
 	"github.com/ChezyName/YouTube-MCP/config"
@@ -12,6 +13,12 @@ import (
 	youtubeAnalytics "google.golang.org/api/youtubeanalytics/v2"
 )
 
+// Get Links
+func extractLinks(text string) []string {
+	re := regexp.MustCompile(`https?://[^\s]+`)
+	return re.FindAllString(text, -1)
+}
+
 func GetChannel() (ChannelStats, error) {
 	ctx := context.Background()
 	svc, err := youtube.NewService(ctx, option.WithAPIKey(config.GetConfig().YouTubeAPI))
@@ -19,7 +26,7 @@ func GetChannel() (ChannelStats, error) {
 		return ChannelStats{}, err
 	}
 
-	res, err := svc.Channels.List([]string{"snippet", "statistics", "brandingSettings"}).
+	res, err := svc.Channels.List([]string{"snippet", "statistics", "brandingSettings", "contentDetails"}).
 		ForHandle(config.GetConfig().ChannelHandle).
 		Do()
 	if err != nil {
@@ -49,6 +56,7 @@ func GetChannel() (ChannelStats, error) {
 		VideoCount:      item.Statistics.VideoCount,
 		TotalViewCount:  item.Statistics.ViewCount,
 		Country:         item.Snippet.Country,
+		Keywords:        item.BrandingSettings.Channel.Keywords,
 	}
 
 	return channel, nil

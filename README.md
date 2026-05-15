@@ -8,10 +8,9 @@ Needs the following APIs from Google
 * Needs APIKey for Public Data
 * Needs OAuth for Private Data + User as TestUser
 
-TODO:
 
+## TODO
 v1.3.0
-- Video Search
 - Installer (Go Lang)
 - Full Docs & Step-by-Step Instillation
 

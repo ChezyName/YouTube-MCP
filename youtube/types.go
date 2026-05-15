@@ -114,6 +114,7 @@ type ChannelStats struct {
 	VideoCount      uint64 `json:"video_count" jsonschema:"The number of videos"`
 	TotalViewCount  uint64 `json:"total_view_count" jsonschema:"The total views"`
 	Country         string `json:"country" jsonschema:"The country"`
+	Keywords        string `json:"keywords jsonschema:"Keywords or tags of the channel"`
 }
 
 type ChannelAnalyticsResponse struct {

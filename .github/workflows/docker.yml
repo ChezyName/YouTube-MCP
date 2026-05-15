@@ -30,13 +30,13 @@ jobs:
           GOOS=darwin  GOARCH=amd64 go build -o dist/youtube-mcp-darwin-amd64 main.go
           GOOS=darwin  GOARCH=arm64 go build -o dist/youtube-mcp-darwin-arm64 main.go
       
-      - name: Build token-grabber binaries
+      - name: Build Installer
         run: |
-          GOOS=windows GOARCH=amd64 go build -o dist/token-grabber-windows.exe ./cwd/token-getter
-          GOOS=linux   GOARCH=amd64 go build -o dist/token-grabber-linux-amd64 ./cwd/token-getter
-          GOOS=linux   GOARCH=arm64 go build -o dist/token-grabber-linux-arm64 ./cwd/token-getter
-          GOOS=darwin  GOARCH=amd64 go build -o dist/token-grabber-darwin-amd64 ./cwd/token-getter
-          GOOS=darwin  GOARCH=arm64 go build -o dist/token-grabber-darwin-arm64 ./cwd/token-getter
+          GOOS=windows GOARCH=amd64 go build -o dist/installer-windows.exe ./cwd/installer
+          GOOS=linux   GOARCH=amd64 go build -o dist/installer-linux-amd64 ./cwd/installer
+          GOOS=linux   GOARCH=arm64 go build -o dist/installer-linux-arm64 ./cwd/installer
+          GOOS=darwin  GOARCH=amd64 go build -o dist/installer-darwin-amd64 ./cwd/installer
+          GOOS=darwin  GOARCH=arm64 go build -o dist/installer-darwin-arm64 ./cwd/installer
 
       - name: Upload binaries to release
         uses: softprops/action-gh-release@v2
