@@ -66,28 +66,7 @@ Params:
 	range: custom numbers, in days or Lifetime - this superseeds all
 */
 //TODO: use waitgroup to load all data async (all at once in threads)
-func GetAnalyticsForVideo(videoID string, startDate string, endDate string, inRange string) (AnalyticsResponse, error) {
-	if endDate == "" {
-		endDate = time.Now().Format("2006-01-02")
-	}
-	if startDate == "" {
-		//TODO: allow edits via .env or some kind of config.json to edit this
-		startDate = time.Now().AddDate(0, 0, -90).Format("2006-01-02") //last 90
-	}
-
-	if inRange != "" {
-		if strings.ToUpper(inRange) == "LIFETIME" {
-			endDate = time.Now().Format("2006-01-02")
-			startDate = "2005-01-01"
-		} else {
-			//try and parse # of days
-			days := 90 // default
-			fmt.Sscanf(inRange, "%d", &days)
-			startDate = time.Now().AddDate(0, 0, -days).Format("2006-01-02")
-			endDate = time.Now().Format("2006-01-02")
-		}
-	}
-
+func GetAnalyticsForVideo(videoID string, startDate string, endDate string) (AnalyticsResponse, error) {
 	client, err := config.GetOAuthClient()
 	if err != nil {
 		return AnalyticsResponse{}, err

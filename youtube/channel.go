@@ -4,10 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"strconv"
-	"strings"
 	"sync"
-	"time"
 
 	"github.com/ChezyName/YouTube-MCP/config"
 	"google.golang.org/api/option"
@@ -65,33 +62,7 @@ Params:
 	end: end date for range
 	range: custom numbers, in days or Lifetime - this superseeds all
 */
-func GetChannelAnalytics(startDate string, endDate string, inRange string) (ChannelAnalyticsResponse, error) {
-	//defaults to lifetime
-	if startDate == "" && endDate == "" && inRange == "" {
-		endDate = time.Now().Format("2006-01-02")
-		startDate = "2005-01-01"
-	} else {
-		if endDate == "" {
-			endDate = time.Now().Format("2006-01-02")
-		}
-		if startDate == "" {
-			//TODO: allow edits via .env or some kind of config.json to edit this
-			startDate = time.Now().AddDate(0, 0, -90).Format("2006-01-02") //last 90
-		}
-
-		if inRange != "" {
-			if strings.ToUpper(inRange) == "LIFETIME" {
-				startDate = "2005-01-01"
-			} else {
-				// Safe integer parsing
-				if d, err := strconv.Atoi(inRange); err == nil {
-					startDate = time.Now().AddDate(0, 0, -d).Format("2006-01-02")
-				}
-			}
-			endDate = time.Now().Format("2006-01-02")
-		}
-	}
-
+func GetChannelAnalytics(startDate string, endDate string) (ChannelAnalyticsResponse, error) {
 	client, err := config.GetOAuthClient()
 	if err != nil {
 		return ChannelAnalyticsResponse{}, err

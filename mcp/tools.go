@@ -2,10 +2,7 @@ package mcp
 
 import (
 	"context"
-	"fmt"
-	"strings"
 	"sync"
-	"time"
 
 	"github.com/ChezyName/YouTube-MCP/youtube"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
@@ -114,11 +111,7 @@ func GetChannelAnalytics(ctx context.Context, req *mcp.CallToolRequest, input Ch
 	youtube.ChannelAnalyticsResponse,
 	error,
 ) {
-	var iRange = ""
-	if input.Range != nil {
-		iRange = *input.Range
-	}
-	analytics, err := youtube.GetChannelAnalytics(input.StartDate, input.EndDate, iRange)
+	analytics, err := youtube.GetChannelAnalytics(input.Range.Start(), input.Range.End())
 	return nil, analytics, err
 }
 
@@ -127,11 +120,7 @@ func GetVideoAnalytics(ctx context.Context, req *mcp.CallToolRequest, input Vide
 	youtube.AnalyticsResponse,
 	error,
 ) {
-	var iRange = ""
-	if input.Range != nil {
-		iRange = *input.Range
-	}
-	analytics, err := youtube.GetAnalyticsForVideo(input.ID, input.StartDate, input.EndDate, iRange)
+	analytics, err := youtube.GetAnalyticsForVideo(input.ID, input.Range.Start(), input.Range.End())
 	return nil, analytics, err
 }
 
@@ -174,30 +163,11 @@ func GetTopVideos(ctx context.Context, req *mcp.CallToolRequest, input TopVideos
 	TopVideos,
 	error,
 ) {
-	if input.EndDate == "" {
-		input.EndDate = time.Now().Format("2006-01-02")
-	}
-	if input.StartDate == "" {
-		input.StartDate = time.Now().AddDate(0, 0, -90).Format("2006-01-02")
-	}
-
-	if input.Range != nil && *input.Range != "" {
-		if strings.ToUpper(*input.Range) == "LIFETIME" {
-			input.EndDate = time.Now().Format("2006-01-02")
-			input.StartDate = "2005-01-01"
-		} else {
-			days := 90 // default
-			fmt.Sscanf(*input.Range, "%d", &days)
-			input.StartDate = time.Now().AddDate(0, 0, -days).Format("2006-01-02")
-			input.EndDate = time.Now().Format("2006-01-02")
-		}
-	}
-
 	var Limit = 10
 	if input.Limit != nil {
 		Limit = *input.Limit
 	}
-	videos, err := youtube.GetTopVideoIDs(input.StartDate, input.EndDate, int64(Limit))
+	videos, err := youtube.GetTopVideoIDs(input.Range.Start(), input.Range.End(), int64(Limit))
 	if !input.VideoDetails || err != nil {
 		return nil, TopVideos{Count: len(videos), Videos: videos, Details: false}, err
 	}

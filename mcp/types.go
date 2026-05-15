@@ -14,11 +14,9 @@ type VideoParams struct {
 }
 
 type TopVideosParams struct {
-	Range        *string `json:"range,omitempty" jsonschema:"Range in days, overrides the start_date and end_date, lifetime is accepted"`
-	StartDate    string  `json:"start_date" jsonschema:"The start date in YYYY-MM-DD format"`
-	EndDate      string  `json:"end_date" jsonschema:"The end date in YYYY-MM-DD format"`
-	Limit        *int    `json:"limit,omitempty" jsonschema:"The max number of videos to return"`
-	VideoDetails bool    `json:"details" jsonschema:"Boolean which dictates grabbing the video details"`
+	Range        *youtube.Range `json:"range,omitempty" jsonschema:"Optional: Date range in 'YYYY-MM-DD/YYYY-MM-DD' format, 'lifetime', or number of days (e.g. '28'). Defaults to 30 days."`
+	Limit        *int           `json:"limit,omitempty" jsonschema:"The max number of videos to return"`
+	VideoDetails bool           `json:"details" jsonschema:"Boolean which dictates grabbing the video details"`
 }
 
 type VideoCommentsParams struct {
@@ -27,16 +25,12 @@ type VideoCommentsParams struct {
 }
 
 type ChannelAnalyticsParams struct {
-	Range     *string `json:"range,omitempty" jsonschema:"Range in days, overrides the start_date and end_date, lifetime is accepted"`
-	StartDate string  `json:"start_date" jsonschema:"The start date in YYYY-MM-DD format"`
-	EndDate   string  `json:"end_date" jsonschema:"The end date in YYYY-MM-DD format"`
+	Range *youtube.Range `json:"range,omitempty" jsonschema:"Optional: Date range in 'YYYY-MM-DD/YYYY-MM-DD' format, 'lifetime', or number of days (e.g. '28'). Defaults to 30 days."`
 }
 
 type VideoAnalyticsParams struct {
-	ID        string  `json:"id" jsonschema:"YouTube video ID"`
-	Range     *string `json:"range,omitempty" jsonschema:"Range in days, overrides the start_date and end_date, lifetime is accepted"`
-	StartDate string  `json:"start_date" jsonschema:"The start date in YYYY-MM-DD format"`
-	EndDate   string  `json:"end_date" jsonschema:"The end date in YYYY-MM-DD format"`
+	ID    string         `json:"id" jsonschema:"YouTube video ID"`
+	Range *youtube.Range `json:"range,omitempty" jsonschema:"Optional: Date range in 'YYYY-MM-DD/YYYY-MM-DD' format, 'lifetime', or number of days (e.g. '28'). Defaults to 30 days."`
 }
 
 type TranscriptSnippet struct {
