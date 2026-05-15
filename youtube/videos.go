@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"sync"
+	"time"
 
 	"context"
 
@@ -11,6 +13,25 @@ import (
 	"google.golang.org/api/option"
 	"google.golang.org/api/youtube/v3"
 )
+
+// Checks if a video is a short or not
+func isShort(videoID string) bool {
+	client := &http.Client{
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
+		Timeout: 2 * time.Second,
+	}
+
+	resp, err := client.Head("https://www.youtube.com/shorts/" + videoID)
+	if err != nil {
+		return false
+	}
+	defer resp.Body.Close()
+
+	// 200 means it's a Short. 301/302/303 means it's redirecting to a standard video.
+	return resp.StatusCode == http.StatusOK
+}
 
 // Helper function to get Dislikes of a Video
 func fetchDislikes(videoID string) (*VideoDislike, error) {
@@ -28,7 +49,7 @@ func fetchDislikes(videoID string) (*VideoDislike, error) {
 	return &d, nil
 }
 
-func ListVideos() ([]Video, error) {
+func ListVideos(vType *VideoType) ([]Video, error) {
 	ctx := context.Background()
 
 	if config.GetConfig().ChannelHandle == "" {
@@ -54,6 +75,13 @@ func ListVideos() ([]Video, error) {
 	var videos []Video
 	nextPageToken := ""
 
+	type result struct {
+		index int
+		vType VideoType
+	}
+	resultsChan := make(chan result)
+	var wg sync.WaitGroup
+
 	for {
 		call := svc.PlaylistItems.List([]string{"snippet"}).
 			PlaylistId(uploadsPlaylistID).
@@ -66,6 +94,7 @@ func ListVideos() ([]Video, error) {
 			return []Video{}, err
 		}
 
+		//TODO: add mutex to async get the short type
 		for _, item := range res.Items {
 			videos = append(videos, Video{
 				ID:          item.Snippet.ResourceId.VideoId,
@@ -73,7 +102,21 @@ func ListVideos() ([]Video, error) {
 				Description: item.Snippet.Description,
 				PublishedAt: item.Snippet.PublishedAt,
 				Thumbnail:   item.Snippet.Thumbnails.Medium.Url,
+				Type:        Unknown,
 			})
+			var idx = len(videos) - 1
+
+			wg.Add(1)
+			go func(i int, vidID string) {
+				defer wg.Done()
+
+				videoType := Longform
+				if isShort(vidID) {
+					videoType = Short
+				}
+
+				resultsChan <- result{index: i, vType: videoType}
+			}(idx, item.Snippet.ResourceId.VideoId)
 		}
 
 		nextPageToken = res.NextPageToken
@@ -82,6 +125,25 @@ func ListVideos() ([]Video, error) {
 		}
 	}
 
+	go func() {
+		wg.Wait()
+		close(resultsChan)
+	}()
+
+	for res := range resultsChan {
+		videos[res.index].Type = res.vType
+	}
+
+	//Filter quickly
+	n := 0
+	for _, v := range videos {
+		// If user didn't specify (Both/nil) OR if it matches exactly
+		if vType == nil || *vType == Both || v.Type == *vType {
+			videos[n] = v
+			n++
+		}
+	}
+	videos = videos[:n]
 	return videos, nil
 }
 
@@ -121,6 +183,11 @@ func GetVideo(videoID string) (VideoDetail, error) {
 		total_dislikes = uint64(dislikes.Dislikes)
 	}
 
+	videoType := Longform
+	if isShort(videoID) {
+		videoType = Short
+	}
+
 	video := VideoDetail{
 		ID:           item.Id,
 		Title:        item.Snippet.Title,
@@ -132,6 +199,7 @@ func GetVideo(videoID string) (VideoDetail, error) {
 		DislikeCount: total_dislikes,
 		LikeCount:    item.Statistics.LikeCount,
 		CommentCount: item.Statistics.CommentCount,
+		Type:         videoType,
 	}
 
 	return video, nil

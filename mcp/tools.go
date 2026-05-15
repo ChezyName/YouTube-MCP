@@ -65,12 +65,12 @@ func AddTools(server *mcp.Server) {
 	}, GetTopVideos)
 }
 
-func ListVideos(ctx context.Context, req *mcp.CallToolRequest, input interface{}) (
+func ListVideos(ctx context.Context, req *mcp.CallToolRequest, input ListVideoParams) (
 	*mcp.CallToolResult,
 	VideoList,
 	error,
 ) {
-	videos, err := youtube.ListVideos()
+	videos, err := youtube.ListVideos(input.VideoType)
 	return nil, VideoList{Videos: videos, Length: len(videos)}, err
 }
 
@@ -167,7 +167,8 @@ func GetTopVideos(ctx context.Context, req *mcp.CallToolRequest, input TopVideos
 	if input.Limit != nil {
 		Limit = *input.Limit
 	}
-	videos, err := youtube.GetTopVideoIDs(input.Range.Start(), input.Range.End(), int64(Limit))
+
+	videos, err := youtube.GetTopVideoIDs(input.Range.Start(), input.Range.End(), int64(Limit), input.VideoType)
 	if !input.VideoDetails || err != nil {
 		return nil, TopVideos{Count: len(videos), Videos: videos, Details: false}, err
 	}

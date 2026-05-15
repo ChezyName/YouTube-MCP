@@ -15,3 +15,4 @@ TODO:
 
 > Installer (Go Lang)
 > Full Docs & Step-by-Step Instillation
+> Add Caching to each Video item and Video Analytics Item - Takes long to retrieve from API

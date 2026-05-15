@@ -1,5 +1,29 @@
 package youtube
 
+type VideoType string
+
+const (
+	Longform    VideoType = "video"
+	Short       VideoType = "short"
+	Both        VideoType = "both"
+	DefaultType VideoType = Both
+
+	//Custom type only used if errors
+	Unknown VideoType = "unknown"
+)
+
+// GetType returns the value or the default if nil
+func (v *VideoType) GetType() VideoType {
+	if v == nil {
+		return DefaultType
+	}
+	return *v
+}
+
+func (v VideoType) Ptr() *VideoType {
+	return &v
+}
+
 type VideoDislike struct {
 	Likes       int     `json:"likes"`
 	Dislikes    int     `json:"dislikes"`
@@ -11,24 +35,26 @@ type VideoDislike struct {
 }
 
 type Video struct {
-	ID          string `json:"id" jsonschema:"The unique ID of the video"`
-	Title       string `json:"title" jsonschema:"The title of the video"`
-	Description string `json:"description" jsonschema:"The description of the video"`
-	PublishedAt string `json:"published_at" jsonschema:"The time in which the vieo was published"`
-	Thumbnail   string `json:"thumbnail" jsonschema:"The thumbnail url of the video"`
+	ID          string    `json:"id" jsonschema:"The unique ID of the video"`
+	Title       string    `json:"title" jsonschema:"The title of the video"`
+	Description string    `json:"description" jsonschema:"The description of the video"`
+	PublishedAt string    `json:"published_at" jsonschema:"The time in which the vieo was published"`
+	Thumbnail   string    `json:"thumbnail" jsonschema:"The thumbnail url of the video"`
+	Type        VideoType `json:"content_type" jsonschema:"weather the content is longform or shortform"`
 }
 
 type VideoDetail struct {
-	ID           string `json:"id" jsonschema:"The unique ID of the video"`
-	Title        string `json:"title" jsonschema:"The title of the video"`
-	Description  string `json:"description" jsonschema:"The description of the video"`
-	PublishedAt  string `json:"published_at" jsonschema:"The time in which the vieo was published"`
-	Thumbnail    string `json:"thumbnail" jsonschema:"The thumbnail url of the video"`
-	Duration     string `json:"duration" jsonschema:"The duration of the video"`
-	ViewCount    uint64 `json:"view_count" jsonschema:"The number of video views over the video's lifetime"`
-	DislikeCount uint64 `json:"disview_count" jsonschema:"The number of dislikes over the video's lifetime (using return YouTube Dislikes)"`
-	LikeCount    uint64 `json:"like_count" jsonschema:"The number of likes over the video's lifetime"`
-	CommentCount uint64 `json:"comment_count" jsonschema:"The number of comments over the video's lifetime"`
+	ID           string    `json:"id" jsonschema:"The unique ID of the video"`
+	Title        string    `json:"title" jsonschema:"The title of the video"`
+	Description  string    `json:"description" jsonschema:"The description of the video"`
+	PublishedAt  string    `json:"published_at" jsonschema:"The time in which the vieo was published"`
+	Thumbnail    string    `json:"thumbnail" jsonschema:"The thumbnail url of the video"`
+	Duration     string    `json:"duration" jsonschema:"The duration of the video"`
+	ViewCount    uint64    `json:"view_count" jsonschema:"The number of video views over the video's lifetime"`
+	DislikeCount uint64    `json:"disview_count" jsonschema:"The number of dislikes over the video's lifetime (using return YouTube Dislikes)"`
+	LikeCount    uint64    `json:"like_count" jsonschema:"The number of likes over the video's lifetime"`
+	CommentCount uint64    `json:"comment_count" jsonschema:"The number of comments over the video's lifetime"`
+	Type         VideoType `json:"content_type" jsonschema:"weather the content is longform or shortform"`
 }
 type DateRange struct {
 	Start string `json:"start" jsonschema:"start date"`
@@ -73,6 +99,7 @@ type AnalyticsResponse struct {
 	Geography      []RowData `json:"geography" jsonschema:"Where users are watching the videos"`
 	DeviceTypes    []RowData `json:"device_types" jsonschema:"The devices users are watching the video on"`
 	DailyBreakdown []RowData `json:"daily_breakdown" jsonschema:"Daily stats"`
+	Type           VideoType `json:"content_type" jsonschema:"weather the content is longform or shortform"`
 }
 
 type ChannelStats struct {
@@ -93,7 +120,8 @@ type ChannelAnalyticsResponse struct {
 	DateRange        DateRange     `json:"date_range" jsonschema:"Date range for the channel data"`
 	Overview         OverviewStats `json:"overview" jsonschema:"Base stats such as views, watch time, AVD and AVP"`
 	SubscriberGrowth []RowData     `json:"subscriber_growth" jsonschema:"Graph of Subscriber growth"`
-	TopVideos        []VideoDetail `json:"top_videos" jsonschema:"Top 10 views"`
+	TopVideosLong    []VideoDetail `json:"top_longform" jsonschema:"Top 10 longform videos"`
+	TopVideosShort   []VideoDetail `json:"top_shortform" jsonschema:"Top 10 shortform videos"`
 	TrafficSources   []RowData     `json:"traffic_sources" jsonschema:"Where users are seeing the video from"`
 	Geography        []RowData     `json:"geography" jsonschema:"Locations of those who watch the video"`
 	DeviceTypes      []RowData     `json:"device_types" jsonschema:"What devices users use"`

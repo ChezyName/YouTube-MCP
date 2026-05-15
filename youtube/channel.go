@@ -117,14 +117,21 @@ func GetChannelAnalytics(startDate string, endDate string) (ChannelAnalyticsResp
 	}
 
 	// Top videos by views
-	topVideos, err := GetTopVideoIDs(startDate, endDate, 10)
+	topVideosLong, err := GetTopVideoIDs(startDate, endDate, 10, Longform.Ptr())
+	if err != nil {
+		return ChannelAnalyticsResponse{}, err
+	}
+
+	topVideosShort, err := GetTopVideoIDs(startDate, endDate, 10, Short.Ptr())
 	if err != nil {
 		return ChannelAnalyticsResponse{}, err
 	}
 
 	var topVideosWG sync.WaitGroup
-	var TopVideos = make([]VideoDetail, len(topVideos))
-	for idx, vidID := range topVideos {
+	var outTopVideosLong = make([]VideoDetail, len(topVideosLong))
+	var outTopVideosShort = make([]VideoDetail, len(topVideosShort))
+
+	for idx, vidID := range topVideosLong {
 		topVideosWG.Add(1)
 		go func(i int, id string) {
 			defer topVideosWG.Done()
@@ -133,12 +140,26 @@ func GetChannelAnalytics(startDate string, endDate string) (ChannelAnalyticsResp
 				return
 			}
 
-			TopVideos[i] = video
+			outTopVideosLong[i] = video
+		}(idx, vidID)
+	}
+
+	for idx, vidID := range topVideosShort {
+		topVideosWG.Add(1)
+		go func(i int, id string) {
+			defer topVideosWG.Done()
+			video, err := GetVideo(id)
+			if err != nil {
+				return
+			}
+
+			outTopVideosShort[i] = video
 		}(idx, vidID)
 	}
 
 	topVideosWG.Wait()
-	analytics.TopVideos = TopVideos
+	analytics.TopVideosLong = outTopVideosLong
+	analytics.TopVideosShort = outTopVideosShort
 
 	// Traffic sources
 	if res, err := fetchChannelMetrics(

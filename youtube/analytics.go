@@ -197,17 +197,25 @@ func GetAnalyticsForVideo(videoID string, startDate string, endDate string) (Ana
 	})
 
 	analyticsWaitgroup.Wait()
+
+	videoType := Longform
+	if isShort(videoID) {
+		videoType = Short
+	}
+	analytics.Type = videoType
+
 	return analytics, nil
 }
 
-func GetTopVideoIDs(startDate string, endDate string, Limit int64) ([]string, error) {
+func GetTopVideoIDs(startDate string, endDate string, Limit int64, vType *VideoType) ([]string, error) {
 	client, err := config.GetOAuthClient()
 	if err != nil {
 		return nil, err
 	}
 
 	ctx := context.Background()
-	svc, err := youtubeAnalytics.NewService(ctx, option.WithHTTPClient(client))
+	//do not use analytics, shows private or unlisted videos
+	//svc, err := youtubeAnalytics.NewService(ctx, option.WithHTTPClient(client))
 	dataSvc, dataErr := youtube.NewService(ctx, option.WithHTTPClient(client))
 	if err != nil {
 		return nil, err
@@ -217,15 +225,35 @@ func GetTopVideoIDs(startDate string, endDate string, Limit int64) ([]string, er
 		return nil, dataErr
 	}
 
-	// This is the ONLY guaranteed-stable "Top Videos" query
-	call := svc.Reports.Query().
-		Ids("channel==MINE").
-		StartDate(startDate).
-		EndDate(endDate).
-		Metrics("views").
-		Dimensions("video").
-		Sort("-views").
-		MaxResults(int64(Limit * 5)) //get the top but need etra to make sure we can date filter
+	tAfter, errAfter := time.Parse("2006-01-02", startDate)
+	tBefore, errBefore := time.Parse("2006-01-02", endDate)
+
+	if errAfter != nil || errBefore != nil {
+		return nil, fmt.Errorf("invalid date format: use YYYY-MM-DD")
+	}
+
+	tAfter = time.Date(tAfter.Year(), tAfter.Month(), tAfter.Day(), 0, 0, 0, 0, time.UTC)
+	tBefore = time.Date(tBefore.Year(), tBefore.Month(), tBefore.Day(), 23, 59, 59, 0, time.UTC)
+
+	chanCall, err := dataSvc.Channels.List([]string{"id"}).
+		ForHandle(config.GetConfig().ChannelHandle).
+		Do()
+
+	if err != nil || len(chanCall.Items) == 0 {
+		return nil, fmt.Errorf("failed to resolve handle to ID: %v", err)
+	}
+
+	// Need this to get Top Videos for X
+	actualChannelID := chanCall.Items[0].Id
+
+	// Get the Top Videos (any type) - with no limit, filters below
+	call := dataSvc.Search.List([]string{"snippet"}).
+		ChannelId(actualChannelID).                   // Only your videos
+		Type("video").                                // No playlists or channels
+		Order("viewCount").                           // Sort by total views (lifetime)
+		MaxResults(Limit).                            // Respect your limit
+		PublishedAfter(tAfter.Format(time.RFC3339)).  // Google expoects the RFC3330 format
+		PublishedBefore(tBefore.Format(time.RFC3339)) // Same here
 
 	res, err := call.Do()
 	if err != nil {
@@ -233,19 +261,27 @@ func GetTopVideoIDs(startDate string, endDate string, Limit int64) ([]string, er
 		return nil, err
 	}
 
-	if len(res.Rows) == 0 {
+	if len(res.Items) == 0 {
 		return []string{}, nil
 	}
 
 	var rawIDs []string
-	for _, row := range res.Rows {
-		rawIDs = append(rawIDs, row[0].(string))
+	for _, item := range res.Items {
+		if item.Id.VideoId != "" {
+			rawIDs = append(rawIDs, item.Id.VideoId)
+		}
 	}
 
 	startPtr, _ := time.Parse("2006-01-02", startDate)
 	endPtr, _ := time.Parse("2006-01-02", endDate)
 
 	var filteredIDs []string
+	type result struct {
+		vType   VideoType
+		videoID string
+	}
+	resultsChan := make(chan result)
+	var wg sync.WaitGroup
 
 	//Use Data API to make sure each video is part of the top X [50 videos at a time]
 	for i := 0; i < len(rawIDs); i += 50 {
@@ -271,12 +307,30 @@ func GetTopVideoIDs(startDate string, endDate string, Limit int64) ([]string, er
 			// 3. Filter: Only include if the video was PUBLISHED within the range
 			if (pubTime.After(startPtr) || pubTime.Equal(startPtr)) &&
 				(pubTime.Before(endPtr) || pubTime.Equal(endPtr)) {
-				filteredIDs = append(filteredIDs, item.Id)
+				//allow it here,
+				wg.Add(1)
+				go func(vidID string) {
+					defer wg.Done()
 
-				if len(filteredIDs) >= int(Limit) {
-					return filteredIDs, nil
-				}
+					videoType := Longform
+					if isShort(vidID) {
+						videoType = Short
+					}
+
+					resultsChan <- result{videoID: vidID, vType: videoType}
+				}(item.Id)
 			}
+		}
+	}
+
+	go func() {
+		wg.Wait()
+		close(resultsChan)
+	}()
+
+	for res := range resultsChan {
+		if vType.GetType() == Both || res.vType.GetType() == vType.GetType() {
+			filteredIDs = append(filteredIDs, res.videoID)
 		}
 	}
 

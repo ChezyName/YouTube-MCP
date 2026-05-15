@@ -14,9 +14,10 @@ type VideoParams struct {
 }
 
 type TopVideosParams struct {
-	Range        *youtube.Range `json:"range,omitempty" jsonschema:"Optional: Date range in 'YYYY-MM-DD/YYYY-MM-DD' format, 'lifetime', or number of days (e.g. '28'). Defaults to 30 days."`
-	Limit        *int           `json:"limit,omitempty" jsonschema:"The max number of videos to return"`
-	VideoDetails bool           `json:"details" jsonschema:"Boolean which dictates grabbing the video details"`
+	Range        *youtube.Range     `json:"range,omitempty" jsonschema:"Optional: Date range in 'YYYY-MM-DD/YYYY-MM-DD' format, 'lifetime', or number of days (e.g. '28'). Defaults to 30 days."`
+	Limit        *int               `json:"limit,omitempty" jsonschema:"The max number of videos to return"`
+	VideoDetails bool               `json:"details" jsonschema:"Boolean which dictates grabbing the video details"`
+	VideoType    *youtube.VideoType `json:"content_type,omitempty" jsonschema:"The type of content, 'short', 'long', or 'both' to filter through, defaults to both"`
 }
 
 type VideoCommentsParams struct {
@@ -31,6 +32,10 @@ type ChannelAnalyticsParams struct {
 type VideoAnalyticsParams struct {
 	ID    string         `json:"id" jsonschema:"YouTube video ID"`
 	Range *youtube.Range `json:"range,omitempty" jsonschema:"Optional: Date range in 'YYYY-MM-DD/YYYY-MM-DD' format, 'lifetime', or number of days (e.g. '28'). Defaults to 30 days."`
+}
+
+type ListVideoParams struct {
+	VideoType *youtube.VideoType `json:"content_type,omitempty" jsonschema:"The type of content, 'short', 'long', or 'both' to filter through, defaults to both"`
 }
 
 type TranscriptSnippet struct {
