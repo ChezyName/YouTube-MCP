@@ -203,6 +203,9 @@ func (m model) handleInputSubmission() (model, tea.Cmd) {
 			m.state = append(m.state, "Enter your new Channel Handle (without the @):")
 
 			ti := textinput.New()
+			if SuggestedChannelHandle != "" {
+				ti.SetValue(SuggestedChannelHandle)
+			}
 			ti.Placeholder = "YourChannel"
 			ti.Focus()
 			m.textInput = ti

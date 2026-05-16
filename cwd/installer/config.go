@@ -6,11 +6,14 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/ChezyName/YouTube-MCP/config"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
+	"google.golang.org/api/option"
+	"google.golang.org/api/youtube/v3"
 )
 
 // Checks the Config
@@ -73,12 +76,15 @@ var passedAuth = false
 var passedAPI = false
 var passedHandle = false
 
+var SuggestedChannelHandle = ""
+var suggestedChannelHandleOnce sync.Once
+
 func checkAuth(cfg *config.Config) bool {
 	if cfg.YouTubeRefreshToken == "" || (cfg.YOUTUBE_CLIENT_ID == "" || cfg.YOUTUBE_CLIENT_SECRET == "") {
 		return false
 	}
 
-	if lastCheckAuthResult != nil {
+	if lastCheckAuthResult != nil && *lastCheckAuthResult == true {
 		return *lastCheckAuthResult
 	}
 
@@ -92,24 +98,61 @@ func checkAuth(cfg *config.Config) bool {
 
 	// We use an authenticated request to the YouTube metadata validation API.
 	// Filtering by mine=true uses almost zero quota but requires operational OAuth credentials.
-	req, err := http.NewRequestWithContext(ctx, "GET", "https://www.googleapis.com/youtube/v3/channels?part=id&mine=true", nil)
+	req, err := http.NewRequestWithContext(ctx, "GET",
+		"https://www.googleapis.com/youtube/v3/channels?part=snippet,brandingSettings&mine=true", nil)
 	if err != nil {
 		return false
 	}
 
 	resp, err := client.Do(req)
 	if err != nil {
-		// Connection failed completely
 		return false
 	}
 	defer resp.Body.Close()
 
-	// 200 OK means credentials are active and valid.
-	// 401/403 means bad client secrets or revoked refresh tokens.
 	isWorking := resp.StatusCode == http.StatusOK
 
-	// Cache the result so we don't spam the API during UI update cycles
+	// Parse the handle out of the response
+	if isWorking {
+		var result youtube.ChannelListResponse
+		if err := json.NewDecoder(resp.Body).Decode(&result); err == nil {
+			if len(result.Items) > 0 {
+				suggestedChannelHandleOnce.Do(func() {
+					SuggestedChannelHandle = result.Items[0].Snippet.Title
+				})
+			}
+		}
+	}
+
 	lastCheckAuthResult = &isWorking
+	return isWorking
+}
+
+func checkAPI(m *model, cfg *config.Config) bool {
+	if cfg == nil {
+		return false
+	}
+
+	if cfg.YouTubeAPI == "" {
+		return false
+	}
+
+	if lastCheckAPIResult != nil && *lastCheckAPIResult == true {
+		return *lastCheckAPIResult
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	svc, err := youtube.NewService(ctx, option.WithAPIKey(cfg.YouTubeAPI))
+	if err != nil {
+		return false
+	}
+
+	_, err = svc.VideoCategories.List([]string{"snippet"}).RegionCode("US").Do()
+
+	isWorking := err == nil
+	lastCheckAPIResult = &isWorking
 	return isWorking
 }
 
@@ -139,7 +182,7 @@ func (m model) advanceSetupWizard() (model, tea.Cmd) {
 
 	// STEP 2: PUBLIC API KEY
 	cfg = loadConfig()
-	if cfg.YouTubeAPI == "" {
+	if !checkAPI(&m, cfg) {
 		m.configStep = stateAPI
 		var msg = "Step 2/3: Enter your YouTube Public API Key:"
 		if m.state[len(m.state)-1] != msg {
@@ -159,6 +202,7 @@ func (m model) advanceSetupWizard() (model, tea.Cmd) {
 	// STEP 3: CHANNEL HANDLE
 	cfg = loadConfig()
 	if cfg.ChannelHandle == "" {
+		passedHandle = true //cannot edit if alr editing
 		m.configStep = stateHandle
 		var msg = "Step 3/3: Enter your YouTube Channel Handle (without the @):"
 		if m.state[len(m.state)-1] != msg {
@@ -166,6 +210,9 @@ func (m model) advanceSetupWizard() (model, tea.Cmd) {
 		}
 
 		ti := textinput.New()
+		if SuggestedChannelHandle != "" {
+			ti.SetValue(SuggestedChannelHandle)
+		}
 		ti.Placeholder = "YourChannel"
 		ti.Focus()
 		m.textInput = ti
