@@ -2,12 +2,17 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
+	"os"
 
 	"github.com/ChezyName/YouTube-MCP/config"
 	youtubemcp "github.com/ChezyName/YouTube-MCP/mcp"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
+
+// main.go
+var Version = "UNKNOWN" // default if not built with ldflags
 
 func init() {
 	config.LoadConfig()
@@ -15,6 +20,12 @@ func init() {
 }
 
 func main() {
+	//return version upon `./YouTube-MCP -v`
+	if len(os.Args) > 1 && os.Args[1] == "-v" {
+		fmt.Println(Version)
+		os.Exit(0)
+	}
+
 	// Create a server with a single tool.
 	server := mcp.NewServer(&mcp.Implementation{
 		Name:       "YouTube MCP",
