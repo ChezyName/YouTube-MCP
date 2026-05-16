@@ -81,6 +81,7 @@ func main() {
 
 	srv := &http.Server{Addr: ":9999", Handler: mux}
 	go srv.ListenAndServe()
+	openBrowser(authURL)
 
 	<-done
 	srv.Shutdown(context.Background())
@@ -130,4 +131,23 @@ func saveToken(token string, done chan struct{}) {
 
 		close(done)
 	}()
+}
+
+// OS-independent browser utility helper
+func openBrowser(url string) error {
+	var cmd string
+	var args []string
+
+	switch runtime.GOOS {
+	case "windows":
+		cmd = "cmd"
+		args = []string{"/c", "start", url}
+	case "darwin":
+		cmd = "open"
+		args = []string{url}
+	default: // Linux
+		cmd = "xdg-open"
+		args = []string{url}
+	}
+	return exec.Command(cmd, args...).Start()
 }

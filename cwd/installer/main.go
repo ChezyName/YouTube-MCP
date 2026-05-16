@@ -15,6 +15,7 @@ import (
 	"github.com/ChezyName/YouTube-MCP/config"
 	"github.com/charmbracelet/bubbles/progress"
 	"github.com/charmbracelet/bubbles/spinner"
+	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
@@ -31,10 +32,9 @@ func initialModel() model {
 	s.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
 
 	return model{
-		state:       []string{"Initilizing YouTube MCP"},
-		spinner:     s,
-		progress:    progress.New(progress.WithDefaultGradient()),
-		downloadPct: 0,
+		state:    []string{"Initilizing YouTube MCP", ""},
+		spinner:  s,
+		progress: progress.New(progress.WithDefaultGradient()),
 	}
 }
 
@@ -58,9 +58,44 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 		// IF the user is currently typing in a text field (Step 2 or Step 3)
-		if m.configStep == stateAPI || m.configStep == stateHandle {
+		if m.configStep == stateAPI || m.configStep == stateHandle || m.configStep == stateRequestHandleChange {
 			if msg.String() == "enter" {
 				return m.handleInputSubmission()
+			}
+			var cmd tea.Cmd
+			m.textInput, cmd = m.textInput.Update(msg)
+			return m, cmd
+		}
+
+		if m.authStep == authStepClientID || m.authStep == authStepClientSecret {
+			if msg.String() == "enter" {
+				userInput := m.textInput.Value()
+
+				if m.authStep == authStepClientID {
+					m.tempClientID = userInput
+
+					// Move to next input block: Client Secret
+					m.authStep = authStepClientSecret
+					m.state = append(m.state, "", "✓ Client ID stored.")
+					m.state = append(m.state, "Please enter your Google OAuth Client Secret:")
+
+					m.textInput.SetValue("")
+					m.textInput.Placeholder = "GOCSPX-xxxxxxxxx"
+					return m, nil
+				}
+
+				if m.authStep == authStepClientSecret {
+					m.tempClientSecret = m.textInput.Value()
+					m.authStep = authStepWaitingBrowser
+					m.textInput.Blur()
+
+					m.state[len(m.state)-1] = "✓ Client Secret stored."
+					m.state = append(m.state, "(OAuth URL Will Be Copied - incase URL does not auto open)")
+					m.state = append(m.state, "Launching authentication server...")
+
+					// Fire the background callback server command asynchronously
+					return m, startLocalOAuthServerCmd(m.tempClientID, m.tempClientSecret)
+				}
 			}
 			var cmd tea.Cmd
 			m.textInput, cmd = m.textInput.Update(msg)
@@ -89,6 +124,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			fmt.Sprintf("Prepping Download for YouTube MCP (%s)", getOS()),
 		)
 		return m, nil
+	case downloadFinishedMsg:
+		m.state = append(m.state, fmt.Sprintf("✓ Downloaded to %s", msg.path))
+		return m, tea.Quit
 	}
 
 	/*
@@ -116,33 +154,29 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m model) View() string {
 	var bodyView string
-	if m.configStep == stateAPI || m.configStep == stateHandle {
-		var logHistory string
-		for _, logLine := range m.state {
-			logHistory += fmt.Sprintf("  %s\n", logLine) //indent for all to fix spinner pos issue
-		}
 
-		bodyView = fmt.Sprintf(
-			"%s\n%s\n\n(Press Enter to confirm)",
-			logHistory,
-			m.textInput.View(),
-		)
-	} else {
-		var logHistory string
-		totalLogs := len(m.state)
-
-		for i, logLine := range m.state {
-			//current active log
-			if i == totalLogs-1 {
-				logHistory += fmt.Sprintf("%s %s\n", m.spinner.View(), logLine)
-			} else {
-				logHistory += fmt.Sprintf("✓ %s\n", logLine)
-			}
-		}
-		bodyView = logHistory
+	// Build rolling scroll history list log block layout
+	var logHistory string
+	for _, logLine := range m.state {
+		logHistory += fmt.Sprintf("   %s\n", logLine)
 	}
 
-	// Stack the persistent header cleanly above our custom body view
+	switch m.configStep {
+	case stateAPI, stateHandle, stateRequestHandleChange:
+		bodyView = fmt.Sprintf("%s\n%s\n\n(Press Enter to confirm)", logHistory, m.textInput.View())
+	default:
+		switch m.authStep {
+		case authStepClientID, authStepClientSecret:
+			// If actively prompt typing: show logs along with live flashing keyboard box
+			bodyView = fmt.Sprintf("%s\n%s\n\n(Press Enter to confirm)", logHistory, m.textInput.View())
+		case authStepWaitingBrowser:
+			// If waiting for web redirect click: show progress spinner inline on last log trace
+			bodyView = fmt.Sprintf("%s\n%s Waiting for browser auth confirmation link callback...", logHistory, m.spinner.View())
+		default:
+			bodyView = logHistory
+		}
+	}
+
 	return fmt.Sprintf("%s\n%s", headerView, bodyView)
 }
 
@@ -162,6 +196,23 @@ func (m model) handleInputSubmission() (model, tea.Cmd) {
 		cfg.YouTubeAPI = userInput
 	case stateHandle:
 		cfg.ChannelHandle = userInput
+	case stateRequestHandleChange:
+		if userInput == "y" || userInput == "Y" {
+			// Drop into edit mode
+			m.configStep = stateHandle
+			m.state = append(m.state, "Enter your new Channel Handle (without the @):")
+
+			ti := textinput.New()
+			ti.Placeholder = "YourChannel"
+			ti.Focus()
+			m.textInput = ti
+			return m, nil
+		} else {
+			// Skip — treat as already set, advance
+			m.configStep = stateNone
+			m.textInput.Blur()
+			return m.advanceSetupWizard()
+		}
 	}
 
 	saveConfig(*cfg)

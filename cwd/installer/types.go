@@ -7,7 +7,7 @@ import (
 )
 
 // Messages define state changes
-type checkFinishedMsg struct{ configPath string }
+type checkFinishedMsg struct{}
 type fatalError struct{ err error }
 type configSetup struct{}
 type loginFinishedMsg struct{} //for Auth
@@ -18,14 +18,18 @@ const (
 	stateNone configState = iota
 	stateAuth
 	stateHandle
+	stateRequestHandleChange
 	stateAPI
 )
 
 type model struct {
-	state       []string
-	configStep  configState
-	progress    progress.Model
-	spinner     spinner.Model
-	textInput   textinput.Model
-	downloadPct float64
+	state      []string
+	configStep configState
+	progress   progress.Model
+	spinner    spinner.Model
+	textInput  textinput.Model
+
+	authStep         authSubStep
+	tempClientID     string
+	tempClientSecret string
 }

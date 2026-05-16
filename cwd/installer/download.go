@@ -1,6 +1,10 @@
 package main
 
-import "runtime"
+import (
+	"runtime"
+
+	tea "github.com/charmbracelet/bubbletea"
+)
 
 func getOS() string {
 	os := runtime.GOOS
@@ -53,5 +57,14 @@ func getDownloadFile() string {
 	default:
 		// Fallback safe choice if something wild happens
 		return "youtube-mcp-linux-amd64"
+	}
+}
+
+type downloadFinishedMsg struct{ path string }
+
+func downloadMCPCmd() tea.Cmd {
+	return func() tea.Msg {
+		// download logic...
+		return downloadFinishedMsg{path: "/path/to/mcp"}
 	}
 }

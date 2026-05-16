@@ -1,8 +1,12 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
+	"fmt"
+	"net/http"
 	"os"
+	"time"
 
 	"github.com/ChezyName/YouTube-MCP/config"
 	"github.com/charmbracelet/bubbles/textinput"
@@ -28,38 +32,27 @@ func checkConfig() tea.Msg {
 			return fatalError{err: err}
 		}
 
+		//save empty
+		saveConfig(config.Config{})
 		return configSetup{}
+	}
+
+	//Make sure the JSON is a valid structure or it will fail
+	file, err := os.ReadFile(configFile)
+	if err != nil {
+		saveConfig(config.Config{})
+	}
+
+	var cfg config.Config
+	if err := json.Unmarshal(file, &cfg); err != nil {
+		saveConfig(config.Config{})
 	}
 
 	//Load Config first
 	config.LoadConfig()
 
-	//Better to check before fatal, but should never be invalid here
-	if config.GetConfig() == nil {
-		return configSetup{}
-	}
-
-	//Check the configs
-	//Need to AUTH
-	if config.GetConfig().YouTubeRefreshToken == "" ||
-		(config.GetConfig().YOUTUBE_CLIENT_ID == "" || config.GetConfig().YOUTUBE_CLIENT_SECRET == "") {
-		//Load Secrets & Auth
-		return configSetup{}
-	}
-
-	//Need User Handle - Can Auto Get from Channel Analytics
-	if config.GetConfig().ChannelHandle == "" {
-		//Load Channel Handle
-		return configSetup{}
-	}
-
-	//Need YouTube Public API Key
-	if config.GetConfig().YouTubeAPI == "" {
-		//Load Channel Handle
-		return configSetup{}
-	}
-
-	return checkFinishedMsg{configPath: configDir}
+	//Start setup to check auth anyways
+	return configSetup{}
 }
 
 func loadConfig() *config.Config {
@@ -73,41 +66,120 @@ func saveConfig(conf config.Config) {
 	_ = os.WriteFile(file, fileData, 0644)
 }
 
+var lastCheckAuthResult *bool = nil
+var lastCheckAPIResult *bool = nil
+
+var passedAuth = false
+var passedAPI = false
+var passedHandle = false
+
+func checkAuth(cfg *config.Config) bool {
+	if cfg.YouTubeRefreshToken == "" || (cfg.YOUTUBE_CLIENT_ID == "" || cfg.YOUTUBE_CLIENT_SECRET == "") {
+		return false
+	}
+
+	if lastCheckAuthResult != nil {
+		return *lastCheckAuthResult
+	}
+
+	//test to see if end-point can be reached
+	client, err := config.GetOAuthClient()
+	if err != nil {
+		return false
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// We use an authenticated request to the YouTube metadata validation API.
+	// Filtering by mine=true uses almost zero quota but requires operational OAuth credentials.
+	req, err := http.NewRequestWithContext(ctx, "GET", "https://www.googleapis.com/youtube/v3/channels?part=id&mine=true", nil)
+	if err != nil {
+		return false
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		// Connection failed completely
+		return false
+	}
+	defer resp.Body.Close()
+
+	// 200 OK means credentials are active and valid.
+	// 401/403 means bad client secrets or revoked refresh tokens.
+	isWorking := resp.StatusCode == http.StatusOK
+
+	// Cache the result so we don't spam the API during UI update cycles
+	lastCheckAuthResult = &isWorking
+	return isWorking
+}
+
 func (m model) advanceSetupWizard() (model, tea.Cmd) {
 
 	// STEP 1: AUTHENTICATION
 	cfg := loadConfig()
-	if cfg.YouTubeRefreshToken == "" && (cfg.YOUTUBE_CLIENT_ID == "" || cfg.YOUTUBE_CLIENT_SECRET == "") {
-		m.configStep = stateAuth
-		m.state = append(m.state, "Step 1/3: Launching browser for YouTube Authentication...")
+	if !checkAuth(cfg) {
+		if m.authStep == authStepNone {
+			// Trigger Step 1A: Prompt for Client ID
+			m.authStep = authStepClientID
+			if m.state[len(m.state)-1] != instructions {
+				m.state = append(m.state, instructions)
+			}
 
-		// Return your background auth function wrapped as a command
-		return m, func() tea.Msg {
-			return loginClientAuth()
+			ti := textinput.New()
+			ti.Placeholder = "123456-abc.apps.googleusercontent.com"
+			ti.Focus()
+			m.textInput = ti
+			return m, nil
 		}
+	} else if !passedAuth {
+		passedAuth = true
+		m.state = append(m.state, "OAuth Succsesfully Passed", "")
+		m.authStep = authStepNone
 	}
 
 	// STEP 2: PUBLIC API KEY
 	cfg = loadConfig()
 	if cfg.YouTubeAPI == "" {
 		m.configStep = stateAPI
-		m.state = append(m.state, "Step 2/3: Enter your YouTube Public API Key:")
+		var msg = "Step 2/3: Enter your YouTube Public API Key:"
+		if m.state[len(m.state)-1] != msg {
+			m.state = append(m.state, msg)
+		}
 
 		ti := textinput.New()
 		ti.Placeholder = "AIzaSy..."
 		ti.Focus()
 		m.textInput = ti
 		return m, nil // Stop background work; wait for input
+	} else if !passedAPI {
+		passedAPI = true
+		m.state = append(m.state, "API Check Succsesfully Passed", "")
 	}
 
 	// STEP 3: CHANNEL HANDLE
 	cfg = loadConfig()
 	if cfg.ChannelHandle == "" {
 		m.configStep = stateHandle
-		m.state = append(m.state, "Step 3/3: Enter your YouTube Channel Handle (without the @):")
+		var msg = "Step 3/3: Enter your YouTube Channel Handle (without the @):"
+		if m.state[len(m.state)-1] != msg {
+			m.state = append(m.state, msg)
+		}
 
 		ti := textinput.New()
 		ti.Placeholder = "YourChannel"
+		ti.Focus()
+		m.textInput = ti
+		return m, nil
+	} else if m.configStep != stateRequestHandleChange && !passedHandle {
+		passedHandle = true
+		m.configStep = stateRequestHandleChange
+		msg := fmt.Sprintf("Step 3/3: Channel Handle is already set to @%s. Change it? [y/n]:", cfg.ChannelHandle)
+		if m.state[len(m.state)-1] != msg {
+			m.state = append(m.state, msg)
+		}
+
+		ti := textinput.New()
+		ti.Placeholder = "y/n"
 		ti.Focus()
 		m.textInput = ti
 		return m, nil
@@ -115,8 +187,11 @@ func (m model) advanceSetupWizard() (model, tea.Cmd) {
 
 	// STEP 4: DONE
 	m.configStep = stateNone
-	m.state = append(m.state, "All configuration verifications passed successfully!")
+	var msg = "All configuration verifications passed successfully!"
+	if m.state[len(m.state)-1] != msg {
+		m.state = append(m.state, msg)
+	}
 
 	// return command for
-	return m, nil
+	return m, downloadMCPCmd()
 }
