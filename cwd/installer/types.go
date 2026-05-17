@@ -22,6 +22,7 @@ const (
 	stateReqDownload
 	stateDownload
 	stateAPI
+	stateDone //program will close after this - no return
 )
 
 type model struct {

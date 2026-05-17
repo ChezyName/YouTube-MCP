@@ -122,11 +122,8 @@ type versionCheck struct {
 // checks for version, if new ver aval, asks user if you wanna download
 func checkMCPDownload() tea.Cmd {
 	return func() tea.Msg {
-		cVersion, errVer := getCurrentVersion()
+		cVersion, _ := getCurrentVersion()
 		lRelease, errRel := getLatestDownload()
-		if errVer != nil {
-			return fatalError{err: errVer}
-		}
 		if errRel != nil {
 			return fatalError{err: errRel}
 		}
@@ -137,13 +134,13 @@ func checkMCPDownload() tea.Cmd {
 func downloadMCPCmd(progressChan chan float64) tea.Cmd {
 	return func() tea.Msg {
 		release, err := getLatestDownload()
-		if release == nil {
+		if err != nil {
 			return fatalError{err: err}
 		}
 
 		downloadURL, ok := release.AssetsMap[getDownloadFile()]
 		if !ok {
-			return fatalError{err: fmt.Errorf("Failed to find download file for %s \n %s", getOS(), release.Assets)}
+			return fatalError{err: fmt.Errorf("Failed to find download file for %s or '%s'", getOS(), getDownloadFile())}
 		}
 
 		client := &http.Client{Timeout: 5 * time.Minute}
@@ -165,19 +162,21 @@ func downloadMCPCmd(progressChan chan float64) tea.Cmd {
 		defer out.Close()
 
 		pw := &progressWriter{
+			file:  out, // Feed it the open file descriptor
 			total: resp.ContentLength,
 			onProgress: func(percent float64) {
-				// Send to channel
 				progressChan <- percent
 			},
 		}
 
-		_, err = io.Copy(out, io.TeeReader(resp.Body, pw))
+		// This cannot be optimized out; every byte MUST flow through pw.Write()
+		_, err = io.Copy(pw, resp.Body)
 		if err != nil {
 			return fatalError{err: err}
 		}
 
 		_ = out.Sync()
+		time.Sleep(250 * time.Millisecond) //small wait for progress to finish
 		return downloadFinishedMsg{}
 	}
 }
@@ -187,18 +186,24 @@ type downloadFinishedMsg struct{}
 
 // progressWriter counts the bytes written to disk and sends updates
 type progressWriter struct {
+	file       *os.File
 	total      int64
 	downloaded int64
 	onProgress func(float64)
 }
 
 func (pw *progressWriter) Write(p []byte) (int, error) {
-	n := len(p)
+	n, err := pw.file.Write(p)
+	if err != nil {
+		return n, err
+	}
+
+	// 2. Count the written bytes
 	pw.downloaded += int64(n)
 	if pw.total > 0 {
-		// Calculate percentage as a float64 between 0.0 and 1.0
 		percentage := float64(pw.downloaded) / float64(pw.total)
 		pw.onProgress(percentage)
 	}
+
 	return n, nil
 }

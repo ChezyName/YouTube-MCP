@@ -52,15 +52,18 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 
 	switch msg := msg.(type) {
-	case progress.FrameMsg: //for progress bar / downloads
-		newProgressModel, cmd := m.progress.Update(msg)
-		if pm, ok := newProgressModel.(progress.Model); ok {
-			m.progress = pm
-		}
-		return m, cmd
 	case tea.KeyMsg:
 		if msg.String() == "ctrl+c" {
 			return m, tea.Quit
+		}
+
+		//program is done from here
+		if m.configStep == stateDone {
+			switch msg.String() {
+			case "enter", "ctrl+c", "q":
+				return m, tea.Quit
+			}
+			return m, nil
 		}
 
 		// IF the user is currently typing in a text field (Step 2 or Step 3)
@@ -115,8 +118,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case fatalError:
 		if msg.err != nil {
-			m.state = append(m.state, fmt.Sprintf("[FATAL ERROR]: %s", msg.err.Error()))
-			return m, tea.Quit //quit if the error is valid
+			m.configStep = stateDone
+			m.state = append(m.state, fmt.Sprintf("[FATAL ERROR]: %s", msg.err.Error()), "(press enter to quit)")
+			return m, nil
 		}
 		return m, nil
 
@@ -139,17 +143,18 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		// Scenario C: No upstream version found, or it matches current version
 		if msg.UpVersion == "" || msg.UpVersion == msg.CurrentVersion {
-			m.state = append(m.state, "You are all set! YouTube-MCP is up to date.", fmt.Sprintf("MCP Located At: %s", getDownloadFile()))
-			return m, tea.Quit
+			m.state = append(m.state, "You are all set! YouTube-MCP is up to date.", "MCP Located at", getFileOut())
+			m.configStep = stateDone
+			return m, nil
 		}
 
 		// Scenario B: No local version found -> Auto-download
-		if msg.CurrentVersion == "" {
+		if msg.CurrentVersion == "" || msg.CurrentVersion == "NO_FILE_FOUND" {
 			m.configStep = stateDownload
 			m.state = append(m.state, fmt.Sprintf("No local version found. Auto-downloading latest version (%s)...", msg.UpVersion))
 
 			// Return a command to immediately start downloading in the background
-			m.progressChan = make(chan float64)
+			m.progressChan = make(chan float64, 100)
 			return m, tea.Batch(
 				downloadMCPCmd(m.progressChan),         // writes
 				listeDownloadnProgress(m.progressChan), // reads
@@ -172,12 +177,24 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	case downloadProgressMsg:
 		m.downloadPct = float64(msg)
-		return m, listeDownloadnProgress(m.progressChan)
+		progressCmd := m.progress.SetPercent(float64(msg * 100.0))
+		return m, tea.Batch(
+			progressCmd,
+			listeDownloadnProgress(m.progressChan),
+		)
+	case progress.FrameMsg:
+		newProgressModel, newCmd := m.progress.Update(msg)
+		if pm, ok := newProgressModel.(progress.Model); ok {
+			m.progress = pm
+		}
+		cmd = newCmd
+		return m, cmd
 	case downloadFinishedMsg:
 		m.configStep = stateNone
 		m.downloadPct = 1
-		m.state = append(m.state, fmt.Sprintf("✓ Downloaded to %s", getFileOut()))
-		return m, tea.Quit
+		m.state = append(m.state, fmt.Sprintf("Downloaded to %s", getFileOut()))
+		m.configStep = stateDone
+		return m, nil
 	}
 
 	/*
@@ -275,7 +292,7 @@ func (m model) handleInputSubmission() (model, tea.Cmd) {
 	case stateReqDownload:
 		if userInput == "y" || userInput == "Y" {
 			m.configStep = stateDownload
-			m.progressChan = make(chan float64)
+			m.progressChan = make(chan float64, 100)
 			return m, tea.Batch(
 				downloadMCPCmd(m.progressChan),         // writes
 				listeDownloadnProgress(m.progressChan), // reads
