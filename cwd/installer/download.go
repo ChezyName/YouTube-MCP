@@ -1,10 +1,26 @@
 package main
 
 import (
+	"path/filepath"
 	"runtime"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
+
+// File should be config dir/YouTubeMCP
+func getFileOut() string {
+	appDir, _ := getConfigDir()
+	var binaryFile = "YouTube-MCP"
+
+	//should just be the binary except windows req .exe
+	os := runtime.GOOS
+	switch os {
+	case "windows":
+		binaryFile = "YouTube-MCP.exe"
+	}
+
+	return filepath.Join(appDir, binaryFile)
+}
 
 func getOS() string {
 	os := runtime.GOOS
@@ -60,7 +76,16 @@ func getDownloadFile() string {
 	}
 }
 
+func getCurrentVersion() {
+
+}
+
 type downloadFinishedMsg struct{ path string }
+
+// checks for version, if new ver aval, asks user if you wanna download
+func checkMCPDownload() {
+
+}
 
 func downloadMCPCmd() tea.Cmd {
 	return func() tea.Msg {

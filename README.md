@@ -18,6 +18,11 @@ v1.3.1 [Important Performance Improvements]
 - Add Caching to each Video item and Video Analytics Item - Takes long to retrieve from API
 
 v1.4.0
+- Add Types to Search (type: Channel, Video, Playlist, etc...)
+- Other User Search
+    * User Channel - Anyone on YouTube
+
+v1.5.0
 - Competitors
     * Get Competitors - Competitors Channel handle and basic stats (public)
     * Add Competitor - Adds a Competitor
