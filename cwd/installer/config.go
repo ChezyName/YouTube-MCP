@@ -240,5 +240,5 @@ func (m model) advanceSetupWizard() (model, tea.Cmd) {
 	}
 
 	// return command for
-	return m, downloadMCPCmd()
+	return m, checkMCPDownload()
 }

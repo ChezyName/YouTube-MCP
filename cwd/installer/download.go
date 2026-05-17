@@ -1,8 +1,16 @@
 package main
 
 import (
+	"bytes"
+	"fmt"
+	"io"
+	"net/http"
+	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strings"
+	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -54,7 +62,7 @@ func getDownloadFile() string {
 
 	switch os {
 	case "windows":
-		// Windows only needs amd64 based on your build script
+		// Windows only needs amd64 based on build script
 		return "youtube-mcp-windows.exe"
 
 	case "linux":
@@ -76,20 +84,121 @@ func getDownloadFile() string {
 	}
 }
 
-func getCurrentVersion() {
+// Run file with -v if able, then take the output
+var currentVersion = ""
 
+func getCurrentVersion() (string, error) {
+	if currentVersion != "" {
+		return currentVersion, nil
+	}
+
+	binaryPath := getFileOut()
+	if !fileExists(binaryPath) {
+		return "NO_FILE_FOUND", fmt.Errorf("Executable was not found for %s", getOS())
+	}
+
+	cmd := exec.Command(binaryPath, "-v")
+
+	var out bytes.Buffer
+	cmd.Stdout = &out
+
+	var stderr bytes.Buffer
+	cmd.Stderr = &stderr
+
+	err := cmd.Run()
+	if err != nil {
+		return "UNKNOWN", fmt.Errorf("failed to run command: %v, stderr: %s", err, stderr.String())
+	}
+
+	currentVersion = strings.TrimSpace(out.String())
+	return currentVersion, nil
 }
 
-type downloadFinishedMsg struct{ path string }
+type versionCheck struct {
+	CurrentVersion string
+	UpVersion      string
+}
 
 // checks for version, if new ver aval, asks user if you wanna download
-func checkMCPDownload() {
-
+func checkMCPDownload() tea.Cmd {
+	return func() tea.Msg {
+		cVersion, errVer := getCurrentVersion()
+		lRelease, errRel := getLatestDownload()
+		if errVer != nil {
+			return fatalError{err: errVer}
+		}
+		if errRel != nil {
+			return fatalError{err: errRel}
+		}
+		return versionCheck{CurrentVersion: cVersion, UpVersion: lRelease.Version}
+	}
 }
 
-func downloadMCPCmd() tea.Cmd {
+func downloadMCPCmd(progressChan chan float64) tea.Cmd {
 	return func() tea.Msg {
-		// download logic...
-		return downloadFinishedMsg{path: "/path/to/mcp"}
+		release, err := getLatestDownload()
+		if release == nil {
+			return fatalError{err: err}
+		}
+
+		downloadURL, ok := release.AssetsMap[getDownloadFile()]
+		if !ok {
+			return fatalError{err: fmt.Errorf("Failed to find download file for %s \n %s", getOS(), release.Assets)}
+		}
+
+		client := &http.Client{Timeout: 5 * time.Minute}
+		resp, err := client.Get(downloadURL)
+		if err != nil {
+			return fatalError{err: err}
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode != http.StatusOK {
+			return fatalError{err: fmt.Errorf("bad status: %s", resp.Status)}
+		}
+
+		//create file just incase
+		out, err := os.Create(getFileOut())
+		if err != nil {
+			return fatalError{err: err}
+		}
+		defer out.Close()
+
+		pw := &progressWriter{
+			total: resp.ContentLength,
+			onProgress: func(percent float64) {
+				// Send to channel
+				progressChan <- percent
+			},
+		}
+
+		_, err = io.Copy(out, io.TeeReader(resp.Body, pw))
+		if err != nil {
+			return fatalError{err: err}
+		}
+
+		_ = out.Sync()
+		return downloadFinishedMsg{}
 	}
+}
+
+type downloadProgressMsg float64
+type downloadFinishedMsg struct{}
+
+// progressWriter counts the bytes written to disk and sends updates
+type progressWriter struct {
+	total      int64
+	downloaded int64
+	onProgress func(float64)
+}
+
+func (pw *progressWriter) Write(p []byte) (int, error) {
+	n := len(p)
+	pw.downloaded += int64(n)
+	if pw.total > 0 {
+		// Calculate percentage as a float64 between 0.0 and 1.0
+		percentage := float64(pw.downloaded) / float64(pw.total)
+		pw.onProgress(percentage)
+	}
+	return n, nil
 }

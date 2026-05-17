@@ -12,19 +12,21 @@ type fatalError struct{ err error }
 type configSetup struct{}
 type loginFinishedMsg struct{} //for Auth
 
-type configState int
+type globalState int
 
 const (
-	stateNone configState = iota
+	stateNone globalState = iota
 	stateAuth
 	stateHandle
 	stateRequestHandleChange
+	stateReqDownload
+	stateDownload
 	stateAPI
 )
 
 type model struct {
 	state      []string
-	configStep configState
+	configStep globalState
 	progress   progress.Model
 	spinner    spinner.Model
 	textInput  textinput.Model
@@ -32,4 +34,8 @@ type model struct {
 	authStep         authSubStep
 	tempClientID     string
 	tempClientSecret string
+
+	//for downloads
+	progressChan chan float64
+	downloadPct  float64
 }
