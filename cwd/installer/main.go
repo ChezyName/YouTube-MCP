@@ -119,7 +119,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case fatalError:
 		if msg.err != nil {
 			m.configStep = stateDone
-			m.state = append(m.state, fmt.Sprintf("[FATAL ERROR]: %s", msg.err.Error()), "(press enter to quit)")
+			m.state = append(m.state, fmt.Sprintf("[FATAL ERROR]: %s", msg.err.Error()), "(Press Enter to Quit)")
 			return m, nil
 		}
 		return m, nil
@@ -143,7 +143,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		// Scenario C: No upstream version found, or it matches current version
 		if msg.UpVersion == "" || msg.UpVersion == msg.CurrentVersion {
-			m.state = append(m.state, "You are all set! YouTube-MCP is up to date.", "MCP Located at", getFileOut())
+			m.state = append(m.state, "You are all set! YouTube-MCP is up to date.", "MCP Located at", getFileOut(), "(Press Enter to Quit)")
 			m.configStep = stateDone
 			return m, nil
 		}
@@ -192,7 +192,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case downloadFinishedMsg:
 		m.configStep = stateNone
 		m.downloadPct = 1
-		m.state = append(m.state, fmt.Sprintf("Downloaded to %s", getFileOut()))
+		m.state = append(m.state, fmt.Sprintf("Downloaded to %s", getFileOut()), "(Press Enter to Quit)")
 		m.configStep = stateDone
 		return m, nil
 	}
