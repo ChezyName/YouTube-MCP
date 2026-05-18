@@ -1,16 +1,22 @@
-<h1 align="center">YouTube MCP</h1>
+<p align="center">
+  <b><font size="6">YouTube MCP</font></b>
+</p>
+
 <p align="center">
   <img src="https://img.shields.io/github/v/release/ChezyName/YouTube-MCP"/>
     <img src="https://img.shields.io/badge/License-MIT-yellow.svg"/>
+    <img src="https://img.shields.io/badge/platform-Windows%20|%20Mac%20|%20Linux-orange">
 </p>
 
-- [About](#about)
-- [Getting Started](#getting-started)
-  - [Installer](#installer)
-  - [OAuth and Credentials](#oauth-and-credentials)
-  - [Connecting to an AI](#connecting-to-an-ai)
-- [Tools / Commands](#tools--commands)
-- [Roadmap](#roadmap)
+
+<p align="center">
+  <a href="#about"> About </a> |
+  <a href="#getting-started"> Getting Started </a> |
+  <a href="#tools--commands"> Tools </a> |
+  <a href="#roadmap"> Roadmap </a>
+</p>
+
+---
 
 
 ## About
