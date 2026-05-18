@@ -140,12 +140,26 @@ func openBrowser(url string) error {
 
 	switch runtime.GOOS {
 	case "windows":
+		// Try common browser paths directly instead of shell
+		browsers := []string{
+			`C:\Program Files\Google\Chrome\Application\chrome.exe`,
+			`C:\Program Files (x86)\Google\Chrome\Application\chrome.exe`,
+			os.ExpandEnv(`%LOCALAPPDATA%\Google\Chrome\Application\chrome.exe`),
+			`C:\Program Files\Mozilla Firefox\firefox.exe`,
+			`C:\Program Files\Microsoft\Edge\Application\msedge.exe`,
+		}
+		for _, b := range browsers {
+			if _, err := os.Stat(b); err == nil {
+				return exec.Command(b, url).Start()
+			}
+		}
+		// Fallback to shell
 		cmd = "cmd"
 		args = []string{"/c", "start", url}
 	case "darwin":
 		cmd = "open"
 		args = []string{url}
-	default: // Linux
+	default:
 		cmd = "xdg-open"
 		args = []string{url}
 	}
