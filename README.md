@@ -132,6 +132,7 @@ There will always be some prompts the AI cannot fulfil, but for what this tool i
 
 | Tool Name | Type | Description | Returns |
 | :--- | :---: | :--- | :--- |
+| `auth_check`  | 🔒 Private </br> 🌐 Public | Allows MCP to check if this Data API and Analytics API is valid| Auth Check Struct |
 | `all_videos` | 🌐 Public | Returns a list of all public videos on the channel, including basic data. Can specify shortform, longform, or both. | List of Videos: id, title, description, thumbnail, published_at, content_type |
 | `get_video` | 🌐 Public | Gets detailed information for a single video. | ID, Title, Description, Thumbnail, PublishedAt, Duration, Views, Likes, Dislikes, CommentCount |
 | `get_video_comments` | 🌐 Public | Gets a limited number of comments from a specific video. | Author, Text, LikeCount, PublishedAt, UpdatedAt, Comment ID |
