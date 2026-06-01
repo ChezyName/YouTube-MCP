@@ -43,6 +43,8 @@ YouTube MCP is a small program designed to be used by desktop AI clients such as
    2. **Name:** Whatever you want, ie: "YouTube MCP"
    3. **Authorized Redirect URIs:** `http://localhost:9999/callback`
 6. Add Yourself as [Test User](https://console.cloud.google.com/auth/audience)
+7. [Publish your app](https://console.cloud.google.com/auth/audience) as to not have your Token-Refresh not reset after 7 days
+   1. Set it as Production
 > **Note:** You should save the ClientID and the ClientSecret someplace secret, You can always create a new secret
 
 1. Create [YouTube API Key](https://console.cloud.google.com/apis/credentials)

@@ -68,3 +68,8 @@ type TopVideos struct {
 	Details      bool                   `json:"details" jsonschema:"If video details are avalable"`
 	VideoDetails []*youtube.VideoDetail `json:"video_details" jsonschema:"The detailed list of top x videos"`
 }
+
+type AuthCheckResult struct {
+	IsAuthenticatedAnalytics bool `json:"authenticated_analytics" jsonschema:"If the Private Analytics Data is Authenticated"`
+	IsAuthenticatedData      bool `json:"authenticated_data" jsonschema:"If the Public Data API v3 is Authenticated"`
+}

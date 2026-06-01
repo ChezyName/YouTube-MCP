@@ -72,6 +72,13 @@ func AddTools(server *mcp.Server) {
 		Detailed: ID, Title, Description, Thumbnail, PulishedAt, Duration, Views, Dislikes, Likes, CommentCount
 		`,
 	}, SearchForVideo)
+
+	//Auth Check / Test Tools
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "auth_check",
+		Title:       "Authentication Check",
+		Description: "Checks both YouTube Data API and Analytics API",
+	}, ProgramAuthCheck)
 }
 
 func ListVideos(ctx context.Context, req *mcp.CallToolRequest, input ListVideoParams) (
@@ -206,4 +213,16 @@ func GetTopVideos(ctx context.Context, req *mcp.CallToolRequest, input TopVideos
 	wg.Wait()
 
 	return nil, TopVideos{Count: len(videos), Videos: videos, Details: true, VideoDetails: videosDetails}, err
+}
+
+// Add all Auth Checks
+func ProgramAuthCheck(ctx context.Context, req *mcp.CallToolRequest, input interface{}) (
+	*mcp.CallToolResult,
+	AuthCheckResult,
+	error,
+) {
+	return nil, AuthCheckResult{
+		IsAuthenticatedAnalytics: youtube.AuthCheck(),
+		IsAuthenticatedData:      youtube.APICheck(),
+	}, nil
 }
