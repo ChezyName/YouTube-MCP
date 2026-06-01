@@ -76,11 +76,6 @@ type EngagementStats struct {
 	Subscribers float64 `json:"subscribers_gained" jsonschema:"Number of Subscribers Gained on this Video"`
 }
 
-type ImpressionStats struct {
-	Impressions float64 `json:"impressions" jsonschema:"Number of Impressions"`
-	CTR         float64 `json:"click_through_rate" jsonschema:"Click through Rate"`
-}
-
 type RowData struct {
 	Label  string  `json:"label" jsonschema:"title"`
 	Value  float64 `json:"value" jsonschema:"value"`
@@ -88,18 +83,16 @@ type RowData struct {
 }
 
 type AnalyticsResponse struct {
-	VideoID     string          `json:"video_id" jsonschema:"The ID of the video"`
-	DateRange   DateRange       `json:"date_range" jsonschema:"Base stats such as views, watch time, AVD and AVP"`
-	Overview    OverviewStats   `json:"overview" jsonschema:"Base stats such as views, watch time, AVD and AVP"`
-	Engagement  EngagementStats `json:"engagement" jsonschema:"Engagement stats for the video"`
-	Impressions ImpressionStats `json:"impressions" jsonschema:"Impression stats for the video"`
-	//Audience       AudienceStats   `json:"audience"`
-	TrafficSources []RowData `json:"traffic_sources" jsonschema:"Where users are seeing the video"`
-	Retention      []RowData `json:"retention" jsonschema:"The retention graph"`
-	Geography      []RowData `json:"geography" jsonschema:"Where users are watching the videos"`
-	DeviceTypes    []RowData `json:"device_types" jsonschema:"The devices users are watching the video on"`
-	DailyBreakdown []RowData `json:"daily_breakdown" jsonschema:"Daily stats"`
-	Type           VideoType `json:"content_type" jsonschema:"weather the content is longform or shortform"`
+	VideoID        string          `json:"video_id" jsonschema:"The ID of the video"`
+	DateRange      DateRange       `json:"date_range" jsonschema:"Base stats such as views, watch time, AVD and AVP"`
+	Overview       OverviewStats   `json:"overview" jsonschema:"Base stats such as views, watch time, AVD and AVP"`
+	Engagement     EngagementStats `json:"engagement" jsonschema:"Engagement stats for the video"`
+	TrafficSources []RowData       `json:"traffic_sources" jsonschema:"Where users are seeing the video"`
+	Retention      []RowData       `json:"retention" jsonschema:"The retention graph"`
+	Geography      []RowData       `json:"geography" jsonschema:"Where users are watching the videos"`
+	DeviceTypes    []RowData       `json:"device_types" jsonschema:"The devices users are watching the video on"`
+	DailyBreakdown []RowData       `json:"daily_breakdown" jsonschema:"Daily stats"`
+	Type           VideoType       `json:"content_type" jsonschema:"weather the content is longform or shortform"`
 }
 
 type ChannelStats struct {

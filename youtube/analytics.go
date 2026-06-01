@@ -132,20 +132,6 @@ func GetAnalyticsForVideo(videoID string, startDate string, endDate string) (Ana
 		}
 	})
 
-	// Impressions + CTR
-	runTask(func() {
-		if res, err := fetchMetrics(svc, videoID, startDate, endDate,
-			"videoThumbnailImpressions,videoThumbnailImpressionsClickRate,uniqueViewers", ""); err == nil && len(res.Rows) > 0 {
-			row := res.Rows[0]
-			analyticsMutex.Lock()
-			analytics.Impressions = ImpressionStats{
-				Impressions: row[0].(float64),
-				CTR:         row[1].(float64),
-			}
-			analyticsMutex.Unlock()
-		}
-	})
-
 	// Traffic sources
 	runTask(func() {
 		if res, err := fetchMetrics(svc, videoID, startDate, endDate,
