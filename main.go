@@ -30,7 +30,7 @@ func main() {
 	server := mcp.NewServer(&mcp.Implementation{
 		Name:       "YouTube MCP",
 		Title:      "YouTube MCP",
-		Version:    "v1.2.0",
+		Version:    Version,
 		WebsiteURL: "https://github.com/ChezyName/YouTube-MCP",
 	}, nil)
 	youtubemcp.AddTools(server)
