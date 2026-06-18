@@ -64,6 +64,9 @@ func loadCompetitors() {
 }
 
 func saveCompetitors() error {
+	if competitors == nil {
+		return fmt.Errorf("Cannot save an empty or nil competitors object")
+	}
 	bytes, _ := json.MarshalIndent(competitors, "", "  ")
 
 	appData, err := os.UserConfigDir()
@@ -128,6 +131,7 @@ func AddCompetitor(name string, tags []string) error {
 	}
 
 	//save to config file
+	competitors = &cmp
 	err = saveCompetitors()
 	return err
 }
@@ -159,6 +163,7 @@ func RemoveCompetitor(name string) error {
 	}
 
 	//save to config file
+	competitors = &cmp
 	err = saveCompetitors()
 	return err
 }
