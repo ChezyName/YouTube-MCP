@@ -88,6 +88,17 @@ func AddTools(server *mcp.Server) {
 			Description: "Returns a list of Competitors written by the User, or an AI",
 		}, GetCompetitorsList)
 
+		mcp.AddTool(server, &mcp.Tool{
+			Name:        "add_competitor",
+			Title:       "Add Competitor",
+			Description: "Adds a Competitor to the list of competitors for the user",
+		}, AddCompetitor)
+
+		mcp.AddTool(server, &mcp.Tool{
+			Name:        "remove_competitor",
+			Title:       "Remove Competitor",
+			Description: "Removes a Competitor to the list of competitors for the user",
+		}, RemoveCompetitor)
 	}
 }
 

@@ -78,3 +78,12 @@ type AuthCheckResult struct {
 type GetCompetitorsListOutput struct {
 	Competitors []tools.Competitor `json:"competitors" jsonschema:"The list of competitors"`
 }
+
+type CompitorInput struct {
+	Name string    `json:"name" jsonschema:"The channel handle of this user"`
+	Tags *[]string `json:"tags,omitempty" jsonschema:"Any tags associated for the user, typically what this channel uploads"`
+}
+
+type CompitorRemoveInput struct {
+	Name string `json:"name" jsonschema:"The channel handle of this user"`
+}

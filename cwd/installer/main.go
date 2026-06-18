@@ -68,7 +68,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		// IF the user is currently typing in a text field (Step 2 or Step 3)
 		switch m.configStep {
-		case stateAPI, stateHandle, stateRequestHandleChange, stateReqDownload:
+		case stateAPI, stateHandle, stateRequestHandleChange, stateReqDownload, stateCompetitors:
 			if msg.String() == "enter" {
 				return m.handleInputSubmission()
 			}
@@ -232,7 +232,7 @@ func (m model) View() string {
 	switch m.configStep {
 	case stateDownload:
 		bodyView = fmt.Sprintf("%s\n   Downloading YouTube MCP (%s):\n   %s\n", getOS(), logHistory, m.progress.View())
-	case stateAPI, stateHandle, stateRequestHandleChange, stateReqDownload:
+	case stateAPI, stateHandle, stateRequestHandleChange, stateReqDownload, stateCompetitors:
 		bodyView = fmt.Sprintf("%s\n%s\n\n(Press Enter to confirm)", logHistory, m.textInput.View())
 	default:
 		switch m.authStep {
@@ -304,6 +304,13 @@ func (m model) handleInputSubmission() (model, tea.Cmd) {
 			m.state = append(m.state, "You are all set!")
 			return m, tea.Quit
 		}
+	case stateCompetitors:
+		cfg := config.GetConfig()
+		cfg.Competitors = (userInput == "y" || userInput == "Y")
+		saveConfig(*cfg)
+
+		m.textInput.Blur()
+		return m.advanceSetupWizard()
 	}
 
 	saveConfig(*cfg)

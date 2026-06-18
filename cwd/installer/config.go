@@ -75,6 +75,7 @@ var lastCheckAPIResult *bool = nil
 var passedAuth = false
 var passedAPI = false
 var passedHandle = false
+var passedCompetitors = false
 
 var SuggestedChannelHandle = ""
 var suggestedChannelHandleOnce sync.Once
@@ -232,7 +233,23 @@ func (m model) advanceSetupWizard() (model, tea.Cmd) {
 		return m, nil
 	}
 
-	// STEP 4: DONE
+	// STEP 4: COMPETITORS
+	cfg = loadConfig()
+	if !passedCompetitors { //only does this once
+		passedCompetitors = true
+		m.configStep = stateCompetitors
+		m.state = append(m.state, "") //spacer
+		m.state = append(m.state, "Would you like to enable Competitors? [y/n]")
+		m.state = append(m.state, "(This feature allows tracking of competitor channels)")
+
+		ti := textinput.New()
+		ti.Placeholder = "y/n"
+		ti.Focus()
+		m.textInput = ti
+		return m, nil
+	}
+
+	// STEP 5: DONE
 	m.configStep = stateNone
 	var msg = "All configuration verifications passed successfully!"
 	if m.state[len(m.state)-1] != msg {

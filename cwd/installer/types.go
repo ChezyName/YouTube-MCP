@@ -22,6 +22,7 @@ const (
 	stateReqDownload
 	stateDownload
 	stateAPI
+	stateCompetitors
 	stateDone //program will close after this - no return
 )
 

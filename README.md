@@ -150,7 +150,6 @@ There will always be some prompts the AI cannot fulfil, but for what this tool i
 - Drop API Key requirement — OAuth only
 - Caching for Performance Improvements < Not Fully Needed>
 
-- Competitor tracking — add/remove competitors and compare basic public stats (must be enabled by config)
 - Roadmaps -> Allow AI to edit `Context/<year>.md` with tooling to read and write (must be enabled by config)
   - Allows AI to get a context of your plans for each year
 
