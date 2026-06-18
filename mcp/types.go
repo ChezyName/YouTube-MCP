@@ -1,6 +1,7 @@
 package mcp
 
 import (
+	"github.com/ChezyName/YouTube-MCP/tools"
 	"github.com/ChezyName/YouTube-MCP/youtube"
 )
 
@@ -72,4 +73,8 @@ type TopVideos struct {
 type AuthCheckResult struct {
 	IsAuthenticatedAnalytics bool `json:"authenticated_analytics" jsonschema:"If the Private Analytics Data is Authenticated"`
 	IsAuthenticatedData      bool `json:"authenticated_data" jsonschema:"If the Public Data API v3 is Authenticated"`
+}
+
+type GetCompetitorsListOutput struct {
+	Competitors []tools.Competitor `json:"competitors" jsonschema:"The list of competitors"`
 }

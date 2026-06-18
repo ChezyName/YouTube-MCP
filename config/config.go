@@ -13,9 +13,12 @@ type Config struct {
 	ChannelHandle         string `json:"ChannelHandle"`
 	YOUTUBE_CLIENT_ID     string `json:"YOUTUBE_CLIENT_ID"`
 	YOUTUBE_CLIENT_SECRET string `json:"YOUTUBE_CLIENT_SECRET"`
+	Competitors           bool   `json:"ALLOW_COMPETITORS"`
 }
 
 var cfg *Config
+var ConfigFile = "config.json"
+var CompetitorsFile = "competitors.json"
 
 // Load from %appdata%/YouTube-MCP/config.json
 // or create it and tell user to set the params
@@ -27,7 +30,7 @@ func LoadConfig() {
 	}
 
 	configDir := filepath.Join(appData, "/YouTube-MCP")
-	configFile := filepath.Join(configDir, "config.json")
+	configFile := filepath.Join(configDir, ConfigFile)
 
 	//make the folder if does not exist
 	if _, err := os.Stat(configDir); os.IsNotExist(err) {

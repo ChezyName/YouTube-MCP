@@ -4,6 +4,8 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+
+	"github.com/ChezyName/YouTube-MCP/config"
 )
 
 func fileExists(filename string) bool {
@@ -22,7 +24,7 @@ func fileExists(filename string) bool {
 func getConfigDir() (string, string) {
 	appData, _ := os.UserConfigDir()
 	configDir := filepath.Join(appData, "YouTube-MCP")
-	configFile := filepath.Join(configDir, "config.json")
+	configFile := filepath.Join(configDir, config.ConfigFile)
 
 	return configDir, configFile
 }

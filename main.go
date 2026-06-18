@@ -8,6 +8,7 @@ import (
 
 	"github.com/ChezyName/YouTube-MCP/config"
 	youtubemcp "github.com/ChezyName/YouTube-MCP/mcp"
+	"github.com/ChezyName/YouTube-MCP/tools"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
@@ -16,7 +17,11 @@ var Version = "UNKNOWN" // default if not built with ldflags
 
 func init() {
 	config.LoadConfig()
-	//config.EnsureRefreshToken() - only allowed for clients
+
+	//init competitors if allowed
+	if tools.IsCompetitorsEnabled() {
+		tools.GetCompetitors() //loads the file
+	}
 }
 
 func main() {

@@ -97,7 +97,7 @@ Each AI app is different but the main way to connect the MCP is just a path to t
 > Mac & Linux users: Run the installer script — it will configure the correct path for your system automatically.
 
 **Claude Desktop @ Windows, <br/>
-Gemini CLI @ Windows,**
+Gemini CLI @ Windows**
 ``` json
   "mcpServers": {
     "YouTube": {
@@ -145,16 +145,15 @@ There will always be some prompts the AI cannot fulfil, but for what this tool i
 
 ## Roadmap
 
-**v1.4.0**
-- Caching for Performance Improvements
 - Search for any YouTube channel by handle or ID
 - Get public stats for any channel (not just your own)
 - Drop API Key requirement — OAuth only
+- Caching for Performance Improvements < Not Fully Needed>
 
-**v1.5.0**
-- Competitor tracking — add/remove competitors and compare basic public stats
+- Competitor tracking — add/remove competitors and compare basic public stats (must be enabled by config)
+- Roadmaps -> Allow AI to edit `Context/<year>.md` with tooling to read and write (must be enabled by config)
+  - Allows AI to get a context of your plans for each year
 
-**Future**
 - TikTok integration (Channel stats, video analytics, top videos)
 
 ---
