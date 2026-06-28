@@ -16,7 +16,7 @@ func GetCompetitorsList(ctx context.Context, req *mcp.CallToolRequest, input int
 	return nil, GetCompetitorsListOutput{Competitors: data}, err
 }
 
-func AddCompetitor(ctx context.Context, req *mcp.CallToolRequest, input CompitorInput) (
+func AddCompetitor(ctx context.Context, req *mcp.CallToolRequest, input CompetitorInput) (
 	*mcp.CallToolResult,
 	interface{},
 	error,
@@ -29,7 +29,7 @@ func AddCompetitor(ctx context.Context, req *mcp.CallToolRequest, input Compitor
 	return nil, nil, err
 }
 
-func RemoveCompetitor(ctx context.Context, req *mcp.CallToolRequest, input CompitorRemoveInput) (
+func RemoveCompetitor(ctx context.Context, req *mcp.CallToolRequest, input CompetitorRemoveInput) (
 	*mcp.CallToolResult,
 	interface{},
 	error,

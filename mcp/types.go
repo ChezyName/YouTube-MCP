@@ -5,6 +5,8 @@ import (
 	"github.com/ChezyName/YouTube-MCP/youtube"
 )
 
+type NoInput struct{} //Used for Tools that require no input
+
 type VideoList struct {
 	Length int             `json:"length" jsonschema:"The number of videos"`
 	Videos []youtube.Video `json:"videos" jsonschema:"The videos"`
@@ -79,11 +81,11 @@ type GetCompetitorsListOutput struct {
 	Competitors []tools.Competitor `json:"competitors" jsonschema:"The list of competitors"`
 }
 
-type CompitorInput struct {
+type CompetitorInput struct {
 	Name string    `json:"name" jsonschema:"The channel handle of this user"`
 	Tags *[]string `json:"tags,omitempty" jsonschema:"Any tags associated for the user, typically what this channel uploads"`
 }
 
-type CompitorRemoveInput struct {
+type CompetitorRemoveInput struct {
 	Name string `json:"name" jsonschema:"The channel handle of this user"`
 }
