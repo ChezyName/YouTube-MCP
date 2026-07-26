@@ -12,7 +12,6 @@ import (
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
-// main.go
 var Version = "UNKNOWN" // default if not built with ldflags
 
 func init() {
@@ -38,6 +37,7 @@ func main() {
 		Version:    Version,
 		WebsiteURL: "https://github.com/ChezyName/YouTube-MCP",
 	}, nil)
+
 	youtubemcp.AddTools(server)
 
 	// Run the server over stdin/stdout, until the client disconnects.
