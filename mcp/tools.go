@@ -12,18 +12,16 @@ import (
 
 // Helper function that turns Structs into JSON Schema's for MCP to know what tool does
 func SchemaFromStruct(v any) map[string]interface{} {
-	schema := jsonschema.Reflect(v)
-
-	data, err := json.Marshal(schema)
-	if err != nil {
-		return nil
+	reflector := &jsonschema.Reflector{
+		DoNotReference: true,
 	}
+
+	schema := reflector.Reflect(v)
+	schema.Type = "object"
+	data, _ := json.MarshalIndent(schema, "", "  ")
 
 	var m map[string]interface{}
-	if err := json.Unmarshal(data, &m); err != nil {
-		return nil
-	}
-
+	json.Unmarshal(data, &m)
 	return m
 }
 
