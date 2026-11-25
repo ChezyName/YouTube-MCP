@@ -49,6 +49,15 @@ func GetChannel(ctx context.Context, req *mcp.CallToolRequest, input interface{}
 	return nil, channel, err
 }
 
+func GetPublicChannel(ctx context.Context, req *mcp.CallToolRequest, input ChannelHandle) (
+	*mcp.CallToolResult,
+	youtube.ChannelStats,
+	error,
+) {
+	channel, err := youtube.GetPublicChannel(input.Handle)
+	return nil, channel, err
+}
+
 func GetChannelAnalytics(ctx context.Context, req *mcp.CallToolRequest, input ChannelAnalyticsParams) (
 	*mcp.CallToolResult,
 	youtube.ChannelAnalyticsResponse,

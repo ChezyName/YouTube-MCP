@@ -17,15 +17,20 @@ type VideoParams struct {
 }
 
 type TopVideosParams struct {
-	Range        *youtube.Range     `json:"range,omitempty" jsonschema:"Optional: Date range in 'YYYY-MM-DD/YYYY-MM-DD' format, 'lifetime', or number of days (e.g. '28'). Defaults to 30 days."`
-	Limit        *int               `json:"limit,omitempty" jsonschema:"The max number of videos to return"`
-	VideoDetails bool               `json:"details" jsonschema:"Boolean which dictates grabbing the video details"`
-	VideoType    *youtube.VideoType `json:"content_type,omitempty" jsonschema:"The type of content, 'short', 'long', or 'both' to filter through, defaults to both"`
+	Range         *youtube.Range     `json:"range,omitempty" jsonschema:"Optional: Date range in 'YYYY-MM-DD/YYYY-MM-DD' format, 'lifetime', or number of days (e.g. '28'). Defaults to 30 days."`
+	Limit         *int               `json:"limit,omitempty" jsonschema:"The max number of videos to return"`
+	VideoDetails  bool               `json:"details" jsonschema:"Boolean which dictates grabbing the video details"`
+	VideoType     *youtube.VideoType `json:"content_type,omitempty" jsonschema:"The type of content, 'short', 'long', or 'both' to filter through, defaults to both"`
+	ChannelHandle string             `json:"channel_handle,omitempty" jsonschema:"Optional: Channel Handle, for example '@user', defaults to self / user defined in config"`
 }
 
 type VideoCommentsParams struct {
 	ID    string `json:"id" jsonschema:"YouTube video ID"`
 	Limit *int   `json:"limit,omitempty" jsonschema:"The max number of comments loaded. default=20"`
+}
+
+type ChannelHandle struct {
+	Handle string `json:"channel_handle,omitempty" jsonschema:"Required: Channel Handle, for example '@user'"`
 }
 
 type ChannelAnalyticsParams struct {
