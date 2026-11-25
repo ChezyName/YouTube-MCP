@@ -126,7 +126,8 @@ func GetTopVideos(ctx context.Context, req *mcp.CallToolRequest, input TopVideos
 		Limit = *input.Limit
 	}
 
-	videos, err := youtube.GetTopVideoIDs(input.Range.Start(), input.Range.End(), int64(Limit), input.VideoType)
+	var defaultRange = "lifetime"
+	videos, err := youtube.GetTopVideoIDs(input.Range.Start(defaultRange), input.Range.End(defaultRange), int64(Limit), input.VideoType, input.ChannelHandle)
 	if !input.VideoDetails || err != nil {
 		return nil, TopVideos{Count: len(videos), Videos: videos, Details: false}, err
 	}

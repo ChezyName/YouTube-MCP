@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 
+	"github.com/ChezyName/YouTube-MCP/config"
 	"github.com/ChezyName/YouTube-MCP/tools"
 	"github.com/ChezyName/YouTube-MCP/youtube"
 	"github.com/invopop/jsonschema"
@@ -148,5 +149,6 @@ func ProgramAuthCheck(ctx context.Context, req *mcp.CallToolRequest, input inter
 	return nil, AuthCheckResult{
 		IsAuthenticatedAnalytics: youtube.AuthCheck(),
 		IsAuthenticatedData:      youtube.APICheck(),
+		ChannelHandle:            config.GetConfig().ChannelHandle,
 	}, nil
 }

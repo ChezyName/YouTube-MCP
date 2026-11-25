@@ -17,7 +17,7 @@ type VideoParams struct {
 }
 
 type TopVideosParams struct {
-	Range         *youtube.Range     `json:"range,omitempty" jsonschema:"Optional: Date range in 'YYYY-MM-DD/YYYY-MM-DD' format, 'lifetime', or number of days (e.g. '28'). Defaults to 30 days."`
+	Range         *youtube.Range     `json:"range,omitempty" jsonschema:"Optional: Date range in 'YYYY-MM-DD/YYYY-MM-DD' format, 'lifetime', or number of days (e.g. '28'). Defaults to lifetime."`
 	Limit         *int               `json:"limit,omitempty" jsonschema:"The max number of videos to return"`
 	VideoDetails  bool               `json:"details" jsonschema:"Boolean which dictates grabbing the video details"`
 	VideoType     *youtube.VideoType `json:"content_type,omitempty" jsonschema:"The type of content, 'short', 'long', or 'both' to filter through, defaults to both"`
@@ -78,8 +78,9 @@ type TopVideos struct {
 }
 
 type AuthCheckResult struct {
-	IsAuthenticatedAnalytics bool `json:"authenticated_analytics" jsonschema:"If the Private Analytics Data is Authenticated"`
-	IsAuthenticatedData      bool `json:"authenticated_data" jsonschema:"If the Public Data API v3 is Authenticated"`
+	IsAuthenticatedAnalytics bool   `json:"authenticated_analytics" jsonschema:"If the Private Analytics Data is Authenticated"`
+	IsAuthenticatedData      bool   `json:"authenticated_data" jsonschema:"If the Public Data API v3 is Authenticated"`
+	ChannelHandle            string `json:"channel_handle" jsonschema:"If this is empty, user must setup channel handle in config.json"`
 }
 
 type GetCompetitorsListOutput struct {
