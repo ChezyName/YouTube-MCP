@@ -125,12 +125,12 @@ func GetChannelAnalytics(startDate string, endDate string) (ChannelAnalyticsResp
 	}
 
 	// Top videos by views
-	topVideosLong, err := GetTopVideoIDs(startDate, endDate, 10, Longform.Ptr())
+	topVideosLong, err := GetTopVideoIDs(startDate, endDate, 10, Longform.Ptr(), "")
 	if err != nil {
 		return ChannelAnalyticsResponse{}, err
 	}
 
-	topVideosShort, err := GetTopVideoIDs(startDate, endDate, 10, Short.Ptr())
+	topVideosShort, err := GetTopVideoIDs(startDate, endDate, 10, Short.Ptr(), "")
 	if err != nil {
 		return ChannelAnalyticsResponse{}, err
 	}

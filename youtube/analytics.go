@@ -193,10 +193,19 @@ func GetAnalyticsForVideo(videoID string, startDate string, endDate string) (Ana
 	return analytics, nil
 }
 
-func GetTopVideoIDs(startDate string, endDate string, Limit int64, vType *VideoType) ([]string, error) {
+func GetTopVideoIDs(startDate string, endDate string, Limit int64, vType *VideoType, channelHandle string) ([]string, error) {
 	client, err := config.GetOAuthClient()
 	if err != nil {
 		return nil, err
+	}
+
+	var Handle = config.GetConfig().ChannelHandle
+	if channelHandle != "" {
+		Handle = channelHandle
+	}
+
+	if !strings.Contains(Handle, "@") {
+		return nil, fmt.Errorf("'%s' is not a valid Channel Handle, channel handles must include '@'", channelHandle)
 	}
 
 	ctx := context.Background()
@@ -217,9 +226,7 @@ func GetTopVideoIDs(startDate string, endDate string, Limit int64, vType *VideoT
 	tAfter = time.Date(tAfter.Year(), tAfter.Month(), tAfter.Day(), 0, 0, 0, 0, time.UTC)
 	tBefore = time.Date(tBefore.Year(), tBefore.Month(), tBefore.Day(), 23, 59, 59, 0, time.UTC)
 
-	chanCall, err := dataSvc.Channels.List([]string{"id"}).
-		ForHandle(config.GetConfig().ChannelHandle).
-		Do()
+	chanCall, err := dataSvc.Channels.List([]string{"id"}).ForHandle(Handle).Do()
 
 	if err != nil || len(chanCall.Items) == 0 {
 		return nil, fmt.Errorf("failed to resolve handle to ID: %v", err)

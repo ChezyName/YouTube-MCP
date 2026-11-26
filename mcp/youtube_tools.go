@@ -49,6 +49,15 @@ func GetChannel(ctx context.Context, req *mcp.CallToolRequest, input interface{}
 	return nil, channel, err
 }
 
+func GetPublicChannel(ctx context.Context, req *mcp.CallToolRequest, input ChannelHandle) (
+	*mcp.CallToolResult,
+	youtube.ChannelStats,
+	error,
+) {
+	channel, err := youtube.GetPublicChannel(input.Handle)
+	return nil, channel, err
+}
+
 func GetChannelAnalytics(ctx context.Context, req *mcp.CallToolRequest, input ChannelAnalyticsParams) (
 	*mcp.CallToolResult,
 	youtube.ChannelAnalyticsResponse,
@@ -117,7 +126,8 @@ func GetTopVideos(ctx context.Context, req *mcp.CallToolRequest, input TopVideos
 		Limit = *input.Limit
 	}
 
-	videos, err := youtube.GetTopVideoIDs(input.Range.Start(), input.Range.End(), int64(Limit), input.VideoType)
+	var defaultRange = "lifetime"
+	videos, err := youtube.GetTopVideoIDs(input.Range.Start(defaultRange), input.Range.End(defaultRange), int64(Limit), input.VideoType, input.ChannelHandle)
 	if !input.VideoDetails || err != nil {
 		return nil, TopVideos{Count: len(videos), Videos: videos, Details: false}, err
 	}

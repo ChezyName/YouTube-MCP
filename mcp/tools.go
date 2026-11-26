@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 
+	"github.com/ChezyName/YouTube-MCP/config"
 	"github.com/ChezyName/YouTube-MCP/tools"
 	"github.com/ChezyName/YouTube-MCP/youtube"
 	"github.com/invopop/jsonschema"
@@ -29,7 +30,7 @@ func AddTools(server *mcp.Server) {
 	//Video Stats
 	mcp.AddTool(server, &mcp.Tool{
 		Name:        "all_videos",
-		Title:       "All Public Videos",
+		Title:       "All My Public Videos",
 		Description: "[PUBLIC API] Gets all public videos for user along with the data which includes: ID, Title, Description, Thumbnail, PulishedAt",
 		InputSchema: SchemaFromStruct(ListVideoParams{}),
 	}, ListVideos)
@@ -50,16 +51,24 @@ func AddTools(server *mcp.Server) {
 
 	//Channel Stats
 	mcp.AddTool(server, &mcp.Tool{
-		Name:        "get_channel",
-		Title:       "Channel Data",
+		Name:        "my_channel",
+		Title:       "My Channel Data",
 		Description: "[PUBLIC API] Gets the users channel with only the public information such as name, handle, bannel, icon, and description.",
 		InputSchema: SchemaFromStruct(NoInput{}),
 	}, GetChannel)
 
+	//Channel Stats
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "channel_by_id",
+		Title:       "Get Channel Data",
+		Description: "[PUBLIC API] Gets any public channel by ID, returns only the public information such as name, handle, bannel, icon, and description.",
+		InputSchema: SchemaFromStruct(ChannelHandle{}),
+	}, GetPublicChannel)
+
 	//Analytics from the private youtube-analytics API
 	mcp.AddTool(server, &mcp.Tool{
 		Name:  "get_channel_analytics",
-		Title: "Channel Analytics Data",
+		Title: "My Channel Analytics Data",
 		Description: `[PRIVATE API] Get the users channel Analytics given a start_date and end_date (or range in days), defaults to lifetime
 		Returns views, watch time hours, average view duration, average view percentage, likes, dislikes, comments, shares, subscribers, impressions,
 		click through rate, unique views, subscriber grouth graph, top views, traffic sources, geography, device types, age groups, gender, and daily breakdown`,
@@ -85,13 +94,13 @@ func AddTools(server *mcp.Server) {
 	mcp.AddTool(server, &mcp.Tool{
 		Name:        "get_top_videos",
 		Title:       "Top Videos",
-		Description: "[PUBLIC API] Returns a list of the top videos given a date range. Defaults to last 90days and top 10. Details show the public basic data such as name, description, and likes.",
+		Description: "[PUBLIC API] Returns a list of the top videos given a date range. Defaults to lifetime and top 10. Details show the public basic data such as name, description, and likes.",
 		InputSchema: SchemaFromStruct(TopVideosParams{}),
 	}, GetTopVideos)
 
 	mcp.AddTool(server, &mcp.Tool{
 		Name:  "search_video",
-		Title: "Search for Videos given a query",
+		Title: "Video Search",
 		Description: `[PUBLIC API] Returns a detailed or basic list of videos found when searching for them.
 		Basic: ID, Title, Description, Thumbnail, PulishedAt
 		Detailed: ID, Title, Description, Thumbnail, PulishedAt, Duration, Views, Dislikes, Likes, CommentCount`,
@@ -100,11 +109,11 @@ func AddTools(server *mcp.Server) {
 
 	//Auth Check / Test Tools
 	mcp.AddTool(server, &mcp.Tool{
-		Name:        "auth_check",
-		Title:       "Authentication Check",
-		Description: "Checks both YouTube Data API and Analytics API",
+		Name:        "mcp_check",
+		Title:       "MCP Validation Check",
+		Description: "Checks if the Program is running correctly. Verified YouTube Data API, Analytics API, Competitors, and ChannelHandle are all valid",
 		InputSchema: SchemaFromStruct(NoInput{}),
-	}, ProgramAuthCheck)
+	}, ProgramCheck)
 
 	//Competitors - only if config allows it
 	if tools.IsCompetitorsEnabled() {
@@ -131,14 +140,16 @@ func AddTools(server *mcp.Server) {
 	}
 }
 
-// Add all Auth Checks
-func ProgramAuthCheck(ctx context.Context, req *mcp.CallToolRequest, input interface{}) (
+// Checks if the program is running correctly
+func ProgramCheck(ctx context.Context, req *mcp.CallToolRequest, input interface{}) (
 	*mcp.CallToolResult,
-	AuthCheckResult,
+	MCPCheckResult,
 	error,
 ) {
-	return nil, AuthCheckResult{
+	return nil, MCPCheckResult{
 		IsAuthenticatedAnalytics: youtube.AuthCheck(),
 		IsAuthenticatedData:      youtube.APICheck(),
+		ChannelHandle:            config.GetConfig().ChannelHandle,
+		CompetitorsEnabled:       config.GetConfig().Competitors,
 	}, nil
 }

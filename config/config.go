@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 type Config struct {
@@ -65,6 +66,13 @@ func LoadConfig() {
 	if err := json.Unmarshal(file, &cfg); err != nil {
 		fmt.Fprintf(os.Stderr, "ERROR: Invalid JSON in config file: %v\n", err)
 		os.Exit(1)
+	}
+
+	// program expects channel handle with '@'
+	// program allows config to have or not to have
+	// YouTube only allows '@' at the start
+	if !strings.Contains(cfg.ChannelHandle, "@") {
+		cfg.ChannelHandle = "@" + cfg.ChannelHandle
 	}
 }
 

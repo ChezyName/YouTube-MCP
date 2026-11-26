@@ -132,28 +132,17 @@ There will always be some prompts the AI cannot fulfil, but for what this tool i
 
 | Tool Name | Type | Description | Returns |
 | :--- | :---: | :--- | :--- |
-| `auth_check`  | 🔒 Private </br> 🌐 Public | Allows MCP to check if this Data API and Analytics API is valid| Auth Check Struct |
+| `mcp_check`  | 🔒 Private </br> 🌐 Public | Verifies the MCP is running correctly, can be used to verify installation and tool | Auth Check Struct |
 | `all_videos` | 🌐 Public | Returns a list of all public videos on the channel, including basic data. Can specify shortform, longform, or both. | List of Videos: id, title, description, thumbnail, published_at, content_type |
 | `get_video` | 🌐 Public | Gets detailed information for a single video. | ID, Title, Description, Thumbnail, PublishedAt, Duration, Views, Likes, Dislikes, CommentCount |
 | `get_video_comments` | 🌐 Public | Gets a limited number of comments from a specific video. | Author, Text, LikeCount, PublishedAt, UpdatedAt, Comment ID |
 | `get_video_transcript` | 🌐 Public | Returns a structured list of the video transcript. | Array of transcript with text and timestamps |
-| `get_top_videos` | 🌐 Public | Returns a list of top videos given a date range, limit and content_type (defaults to last 30 days, top 10, both long and short form content). | Basic: Name, Description, Likes · Detailed: adds Views, Duration, PublishedAt, CommentCount |
-| `search_video` | 🌐 Public | Searches for videos given a query (supports basic or detailed view). | Array of Basic or Detailed Video Data |
-| `get_channel` | 🌐 Public | Gets public information for a user's (self) channel. | Name, Handle, Banner, Icon, Description |
-| `get_channel_analytics`| 🔒 Private | Gets channel analytics for a date range (defaults to 30 days). | Views, Watch time, AVD, CTR, Subscribers, Demographics, Traffic sources, Daily breakdown |
+| `get_top_videos` | 🌐 Public | Returns a list of top videos given a date range, limit and content_type (defaults to lifetime, top 10, both long and short form content). Optional ChannelHandle to retrieve top videos from a specified creator | Basic: Name, Description, Likes · Detailed: adds Views, Duration, PublishedAt, CommentCount |
+| `search_video` | 🌐 Public  | Searches for videos given a query (supports basic or detailed view). | Array of Basic or Detailed Video Data |
+| `channel_by_id` | 🌐 Public | Gets public information for a channel given the channels handle IE: `@MrBeast`. | Name, Handle, Banner, Icon, Description |
+| `my_channel` | 🌐 Public | Gets public information for a user's (self) channel. | Name, Handle, Banner, Icon, Description |
+| `my_channel_analytics`| 🔒 Private | Gets channel analytics for a date range (defaults to 30 days). | Views, Watch time, AVD, CTR, Subscribers, Demographics, Traffic sources, Daily breakdown |
 | `get_video_analytics`  | 🔒 Private | Gets video-specific analytics for a date range (defaults to last 30 days). | Views, Watch time, AVD, CTR, Demographics, Traffic sources, Daily breakdown, Retention Graph |
-
-## Roadmap
-
-- Search for any YouTube channel by handle or ID
-- Get public stats for any channel (not just your own)
-- Drop API Key requirement — OAuth only
-- Caching for Performance Improvements < Not Fully Needed>
-
-- Roadmaps -> Allow AI to edit `Context/<year>.md` with tooling to read and write (must be enabled by config)
-  - Allows AI to get a context of your plans for each year
-
-- TikTok integration (Channel stats, video analytics, top videos)
 
 ---
 <p align="center">
