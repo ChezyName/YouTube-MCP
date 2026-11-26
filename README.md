@@ -12,8 +12,7 @@
 <p align="center">
   <a href="#about"> About </a> |
   <a href="#getting-started"> Getting Started </a> |
-  <a href="#tools"> Tools </a> |
-  <a href="#roadmap"> Roadmap </a>
+  <a href="#tools"> Tools </a>
 </p>
 
 ---
