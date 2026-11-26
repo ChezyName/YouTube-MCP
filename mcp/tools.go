@@ -94,7 +94,7 @@ func AddTools(server *mcp.Server) {
 	mcp.AddTool(server, &mcp.Tool{
 		Name:        "get_top_videos",
 		Title:       "Top Videos",
-		Description: "[PUBLIC API] Returns a list of the top videos given a date range. Defaults to last 90days and top 10. Details show the public basic data such as name, description, and likes.",
+		Description: "[PUBLIC API] Returns a list of the top videos given a date range. Defaults to lifetime and top 10. Details show the public basic data such as name, description, and likes.",
 		InputSchema: SchemaFromStruct(TopVideosParams{}),
 	}, GetTopVideos)
 
@@ -111,7 +111,7 @@ func AddTools(server *mcp.Server) {
 	mcp.AddTool(server, &mcp.Tool{
 		Name:        "auth_check",
 		Title:       "Authentication Check",
-		Description: "Checks both YouTube Data API and Analytics API",
+		Description: "Checks YouTube Data API, Analytics API, and ChannelHandle is valid",
 		InputSchema: SchemaFromStruct(NoInput{}),
 	}, ProgramAuthCheck)
 
