@@ -77,10 +77,11 @@ type TopVideos struct {
 	VideoDetails []*youtube.VideoDetail `json:"video_details" jsonschema:"The detailed list of top x videos"`
 }
 
-type AuthCheckResult struct {
+type MCPCheckResult struct {
 	IsAuthenticatedAnalytics bool   `json:"authenticated_analytics" jsonschema:"If the Private Analytics Data is Authenticated"`
 	IsAuthenticatedData      bool   `json:"authenticated_data" jsonschema:"If the Public Data API v3 is Authenticated"`
 	ChannelHandle            string `json:"channel_handle" jsonschema:"If this is empty, user must setup channel handle in config.json"`
+	CompetitorsEnabled       bool   `json:"competitors_enabled" jsonschema:"Weather or not the user has competitors enabled, if disabled and user wants to enable it, must edit config.json and restart MCP server"`
 }
 
 type GetCompetitorsListOutput struct {

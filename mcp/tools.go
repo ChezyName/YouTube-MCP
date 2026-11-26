@@ -109,11 +109,11 @@ func AddTools(server *mcp.Server) {
 
 	//Auth Check / Test Tools
 	mcp.AddTool(server, &mcp.Tool{
-		Name:        "auth_check",
-		Title:       "Authentication Check",
-		Description: "Checks YouTube Data API, Analytics API, and ChannelHandle is valid",
+		Name:        "mcp_check",
+		Title:       "MCP Validation Check",
+		Description: "Checks if the Program is running correctly. Verified YouTube Data API, Analytics API, Competitors, and ChannelHandle are all valid",
 		InputSchema: SchemaFromStruct(NoInput{}),
-	}, ProgramAuthCheck)
+	}, ProgramCheck)
 
 	//Competitors - only if config allows it
 	if tools.IsCompetitorsEnabled() {
@@ -140,15 +140,16 @@ func AddTools(server *mcp.Server) {
 	}
 }
 
-// Add all Auth Checks
-func ProgramAuthCheck(ctx context.Context, req *mcp.CallToolRequest, input interface{}) (
+// Checks if the program is running correctly
+func ProgramCheck(ctx context.Context, req *mcp.CallToolRequest, input interface{}) (
 	*mcp.CallToolResult,
-	AuthCheckResult,
+	MCPCheckResult,
 	error,
 ) {
-	return nil, AuthCheckResult{
+	return nil, MCPCheckResult{
 		IsAuthenticatedAnalytics: youtube.AuthCheck(),
 		IsAuthenticatedData:      youtube.APICheck(),
 		ChannelHandle:            config.GetConfig().ChannelHandle,
+		CompetitorsEnabled:       config.GetConfig().Competitors,
 	}, nil
 }
