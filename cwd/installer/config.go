@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strings"
 	"sync"
 	"time"
 
@@ -221,7 +222,7 @@ func (m model) advanceSetupWizard() (model, tea.Cmd) {
 	} else if m.configStep != stateRequestHandleChange && !passedHandle {
 		passedHandle = true
 		m.configStep = stateRequestHandleChange
-		msg := fmt.Sprintf("Step 3/3: Channel Handle is already set to @%s. Change it? [y/n]:", cfg.ChannelHandle)
+		msg := fmt.Sprintf("Step 3/3: Channel Handle is already set to @%s. Change it? [y/n]:", strings.Replace(cfg.ChannelHandle, "@", "", 1))
 		if m.state[len(m.state)-1] != msg {
 			m.state = append(m.state, msg)
 		}
