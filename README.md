@@ -144,17 +144,6 @@ There will always be some prompts the AI cannot fulfil, but for what this tool i
 | `my_channel_analytics`| 🔒 Private | Gets channel analytics for a date range (defaults to 30 days). | Views, Watch time, AVD, CTR, Subscribers, Demographics, Traffic sources, Daily breakdown |
 | `get_video_analytics`  | 🔒 Private | Gets video-specific analytics for a date range (defaults to last 30 days). | Views, Watch time, AVD, CTR, Demographics, Traffic sources, Daily breakdown, Retention Graph |
 
-## Roadmap
-
-- Search for any YouTube channel by handle or ID
-- Drop API Key requirement — OAuth only
-- Caching for Performance Improvements < Not Fully Needed >
-
-- Roadmaps -> Allow AI to edit `Context/<year>.md` with tooling to read and write (must be enabled by config)
-  - Allows AI to get a context of your plans for each year
-
-- TikTok integration (Channel stats, video analytics, top videos)
-
 ---
 <p align="center">
 © 2026 ChezyName
